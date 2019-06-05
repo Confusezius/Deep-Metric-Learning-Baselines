@@ -1,0 +1,10 @@
+Pillow==5.2.0
+tqdm==4.26.0
+pytorch==1.0.1 -c pytorch
+torchvision -c pytorch
+matplotlib
+pandas
+scipy
+scikit-learn
+scikit-image
+h5py
