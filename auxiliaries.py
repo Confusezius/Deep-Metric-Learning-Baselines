@@ -449,10 +449,10 @@ class InfoPlotter():
         self.save_path = save_path
         self.title     = title
         self.figsize   = figsize
-        self.v_colors    = ['r','g','b','y','m','orange','darkgreen','lightblue']
+        self.v_colors    = ['r','g','b','y','m','k','c']
         self.t_colors    = ['k','b','r','g']
 
-    def make_plot(self, t_epochs, v_epochs, t_loss, v_metrics, t_labels, v_labels):
+    def make_plot(self, t_epochs, v_epochs, t_loss, v_metrics, t_labels, v_labels, appendix=None):
         """
         Args:
             x:
@@ -485,6 +485,8 @@ class InfoPlotter():
         axes[1].tick_params(axis='both', which='minor', labelsize=16)
 
         f.set_size_inches(2*self.figsize[0], self.figsize[1])
+
+        savepath = self.save_path if appendix is None else self.save_path
         f.savefig(self.save_path, bbox_inches='tight')
 
         plt.close()
@@ -536,7 +538,10 @@ class LOGGER():
         if start_new: set_logging(opt)
 
         ### Set INFO-PLOTS
-        self.info_plot = InfoPlotter(opt.save_path+'/InfoPlot_{}.svg'.format(name))
+        if self.prop.dataset != 'vehicle_id':
+            self.info_plot = InfoPlotter(opt.save_path+'/InfoPlot_{}.svg'.format(name))
+        else:
+            self.info_plot = {'Set {}'.format(i): InfoPlotter(opt.save_path+'/InfoPlot_{}_Set{}.svg'.format(name,i+1)) for i in range(3)}
 
         ### Set Progress Saver Dict
         self.progress_saver = self.provide_progress_saver(metrics_to_log)
@@ -577,18 +582,26 @@ class LOGGER():
         Args: None
         Returns: Nothing!
         """
-        title = ' | '.join(key+': {0:3.3f}'.format(np.max(item)) for key,item in self.progress_saver['val'].items() if key not in ['Time', 'Epochs'])
-        self.info_plot.title = title
         t_epochs         = self.progress_saver['val']['Epochs']
         t_loss_list      = [self.progress_saver['train']['Train Loss']]
         t_legend_handles = ['Train Loss']
 
         v_epochs         = self.progress_saver['val']['Epochs']
-        v_metric_list    = [self.progress_saver['val'][key] for key in self.progress_saver['val'].keys() if key not in ['Time', 'Epochs']]
-        v_legend_handles = [key for key in self.progress_saver['val'].keys() if key not in ['Time', 'Epochs']]
+        if self.prop.dataset != 'vehicle_id':
+            title = ' | '.join(key+': {0:3.3f}'.format(np.max(item)) for key,item in self.progress_saver['val'].items() if key not in ['Time', 'Epochs'])
+            self.info_plot.title = title
+            v_metric_list    = [self.progress_saver['val'][key] for key in self.progress_saver['val'].keys() if key not in ['Time', 'Epochs']]
+            v_legend_handles = [key for key in self.progress_saver['val'].keys() if key not in ['Time', 'Epochs']]
 
-        self.info_plot.make_plot(t_epochs, v_epochs, t_loss_list, v_metric_list, t_legend_handles, v_legend_handles)
-
+            self.info_plot.make_plot(t_epochs, v_epochs, t_loss_list, v_metric_list, t_legend_handles, v_legend_handles)
+        else:
+            for i in range(3):
+                title = ' | '.join(key+': {0:3.3f}'.format(np.max(item)) for key,item in self.progress_saver['val'].items() if key not in ['Time', 'Epochs'] and 'Set {}'.format(i) in key)
+                self.info_plot['Set {}'.format(i)].title = title
+                #### HERE
+                v_metric_list    = [self.progress_saver['val'][key] for key in self.progress_saver['val'].keys() if key not in ['Time', 'Epochs'] and 'Set {}'.format(i) in key]
+                v_legend_handles = [key for key in self.progress_saver['val'].keys() if key not in ['Time', 'Epochs'] and 'Set {}'.format(i) in key]
+                self.info_plot['Set {}'.format(i)].make_plot(t_epochs, v_epochs, t_loss_list, v_metric_list, t_legend_handles, v_legend_handles, appendix='set_{}'.format(i))
 
 def metrics_to_examine(dataset, k_vals):
     """
@@ -608,8 +621,9 @@ def metrics_to_examine(dataset, k_vals):
         metric_dict['val'] = ['Epochs','Time']
         #Vehicle_ID uses three test sets
         for i in range(3):
+            metric_dict['val'] += ['Set {} NMI'.format(i), 'Set {} F1'.format(i)]
             for k in k_vals:
-                metric_dict['val'] += ['Set {} NMI'.format(i), 'Set {} F1'.format(i)]+['Set {} Recall @ {}'.format(i,k)]
+                metric_dict['val'] += ['Set {} Recall @ {}'.format(i,k)]
     else:
         metric_dict['val'] = ['Epochs','Time','NMI', 'F1']
         metric_dict['val'] += ['Recall @ {}'.format(k) for k in k_vals]

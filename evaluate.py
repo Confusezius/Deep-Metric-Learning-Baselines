@@ -284,20 +284,21 @@ def evaluate_multiple_datasets(LOG, dataloaders, model, opt, save=True, give_ret
 
     with torch.no_grad():
         for i,dataloader in enumerate(dataloaders):
+            print('Working on Set {}/{}'.format(i+1, len(dataloaders)))
             image_paths = np.array(dataloader.dataset.image_list)
             F1, NMI, recall_at_ks, feature_matrix_all = aux.eval_metrics_one_dataset(model, dataloader, device=opt.device, k_vals=opt.k_vals, opt=opt)
 
             result_str = ', '.join('@{0}: {1:.4f}'.format(k,rec) for k,rec in zip(opt.k_vals, recall_at_ks))
-            result_str = 'SET {}: Epoch (Test) {0}: NMI [{1:.4f}] | Recall [{2}]'.format(i+1, epoch, NMI, result_str)
+            result_str = 'SET {0}: Epoch (Test) {1}: NMI [{2:.4f}] | F1 {3:.4f}| Recall [{4}]'.format(i+1, epoch, NMI, F1, result_str)
 
             if LOG is not None:
                 if save:
-                    if not len(LOG.progress_saver['Recall @ 1']) or recall_at_ks[0]>np.max(LOG.progress_saver['Recall @ 1']):
+                    if not len(LOG.progress_saver['val']['Set {} Recall @ 1'.format(i)]) or recall_at_ks[0]>np.max(LOG.progress_saver['val']['Set {} Recall @ 1'.format(i)]):
                         aux.set_checkpoint(model, opt, LOG.progress_saver, LOG.prop.save_path+'/checkpoint_set{}.pth.tar'.format(i+1))
                         aux.recover_closest_one_dataset(feature_matrix_all, image_paths, LOG.prop.save_path+'/sample_recoveries_set{}.png'.format(i+1))
 
                 csv_data += [NMI, F1]+recall_at_ks
+            print(result_str)
 
-    print(result_str)
     csv_data.insert(0, np.round(time.time()-start))
-    LOG.csv_loggers['val'].log('val', LOG.metrics_to_log['val'], csv_data)
+    LOG.log('val', LOG.metrics_to_log['val'], csv_data)

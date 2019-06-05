@@ -92,7 +92,7 @@ parser.add_argument('--source_path',  default=os.getcwd()+'/../../Datasets',   t
 parser.add_argument('--save_path',    default=os.getcwd()+'/Training_Results', type=str, help='Where to save everything.')
 
 ##### Read in parameters
-opt = parser.parse_args(['--gpu','0','--savename','resnet_cub_margin_dist','--dataset','in-shop','--n_epochs','50','--tau','30','--loss','marginloss','--sampling','distance'])
+opt = parser.parse_args(['--gpu','0','--savename','resnet_cub_margin_dist','--dataset','vehicle_id','--n_epochs','50','--tau','30','--loss','marginloss','--sampling','distance'])
 
 
 
@@ -273,7 +273,7 @@ for epoch in range(opt.n_epochs):
 
     ### Train one epoch
     _ = model.train()
-    train_one_epoch(dataloaders['training'], model, optimizer, criterion, opt, epoch)
+    # train_one_epoch(dataloaders['training'], model, optimizer, criterion, opt, epoch)
 
 
     ### Evaluate
@@ -285,6 +285,12 @@ for epoch in range(opt.n_epochs):
         eval_params = {'query_dataloader':dataloaders['testing_query'], 'gallery_dataloader':dataloaders['testing_gallery'], 'model':model, 'opt':opt, 'epoch':epoch}
     elif opt.dataset=='vehicle_id':
         eval_params = {'dataloaders':[dataloaders['testing_set1'], dataloaders['testing_set2'], dataloaders['testing_set3']], 'model':model, 'opt':opt, 'epoch':epoch}
+
+    # from IPython import embed
+    # embed()
+
+    LOG.progress_saver = {'train': {'Epochs': [0],'Time': [748.1935],'Train Loss': [0.24577868185024487]},
+                          'val': {'Epochs': [],'Time': [],'Set 0 NMI': [],'Set 0 F1': [],'Set 0 Recall @ 1': [],'Set 0 Recall @ 5': [],'Set 1 NMI': [],'Set 1 F1': [],'Set 1 Recall @ 1': [],'Set 1 Recall @ 5': [],'Set 2 NMI': [],'Set 2 F1': [],'Set 2 Recall @ 1': [],'Set 2 Recall @ 5': []}}
 
     #Compute Evaluation metrics, print them and store in LOG.
     eval.evaluate(opt.dataset, LOG, save=True, **eval_params)
