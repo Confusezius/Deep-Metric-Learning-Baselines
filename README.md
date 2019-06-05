@@ -198,8 +198,51 @@ For more details, refer to the respective classes in `auxiliaries.py`.
 
 ---
 
+## 4. Results
+
+__CUB200__
+
+Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,2,4,8
+-------------|---------------|--------|------|-----------------
+ResNet50     |               |        |      |     
+GoogLeNet    |               |        |      |      
+
+__Cars196__
+
+Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,2,4,8
+-------------|---------------|--------|------|-----------------
+ResNet50     |               |        |      |     
+GoogLeNet    |               |        |      |      
+
+__Online Products__
+
+Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,10,100,1000
+-------------|---------------|--------|------|-----------------
+ResNet50     |               |        |      |     
+GoogLeNet    |               |        |      |      
+
+__In-Shop Clothes__
+
+Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,10,20,30,50
+-------------|---------------|--------|------|-----------------
+ResNet50     |               |        |      |     
+GoogLeNet    |               |        |      |      
+
+
+__Vehicle ID__ *(medium test set)*
+
+Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,5
+-------------|---------------|--------|------|-----------------
+ResNet50     |               |        |      |     
+GoogLeNet    |               |        |      |      
+
+
+---
+
+
 ## ToDO:
-[ ] Fix Version in `requirements.txt`  
-[ ] Finalize Comments  
-[ ] Add Inception-BN  
-[ ] Add Lifted Structure Loss
+- [ ] Fix Version in `requirements.txt`  
+- [ ] Add Results for Implementations
+- [ ] Finalize Comments  
+- [ ] Add Inception-BN  
+- [ ] Add Lifted Structure Loss
