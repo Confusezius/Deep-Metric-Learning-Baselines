@@ -449,7 +449,7 @@ class InfoPlotter():
         self.save_path = save_path
         self.title     = title
         self.figsize   = figsize
-        self.v_colors    = ['r','g','b','y','m','c','orange','darkgreen','lightblue']
+        self.v_colors    = ['r','g','b','y','m','orange','darkgreen','lightblue']
         self.t_colors    = ['k','b','r','g']
 
     def make_plot(self, t_epochs, v_epochs, t_loss, v_metrics, t_labels, v_labels):
@@ -462,9 +462,6 @@ class InfoPlotter():
         Returns:
             Nothing!
         """
-        from IPython import embed
-        embed()
-        
         plt.style.use('ggplot')
 
         f,axes = plt.subplots(1,2)
