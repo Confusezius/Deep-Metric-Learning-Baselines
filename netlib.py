@@ -13,6 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 
+
+############################ LIBRARIES ######################################
 import torch, os, numpy as np
 
 import torch.nn as nn
@@ -27,6 +29,15 @@ import googlenet
 
 """============================================================="""
 def initialize_weights(model):
+    """
+    Function to initialize network weights.
+    NOTE: NOT USED IN MAIN SCRIPT.
+
+    Args:
+        model: PyTorch Network
+    Returns:
+        Nothing!
+    """
     for idx,module in enumerate(model.modules()):
         if isinstance(module, nn.Conv2d):
             nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
@@ -39,10 +50,17 @@ def initialize_weights(model):
 
 
 
-
 """=================================================================================================================================="""
 ### ATTRIBUTE CHANGE HELPER
 def rename_attr(model, attr, name):
+    """
+    Rename attribute in a class. Simply helper function.
+
+    Args:
+        model:  General Class for which attributes should be renamed.
+        attr:   str, Name of target attribute.
+        name:   str, New attribute name.
+    """
     setattr(model, name, getattr(model, attr))
     delattr(model, attr)
 
@@ -50,6 +68,14 @@ def rename_attr(model, attr, name):
 """=================================================================================================================================="""
 ### NETWORK SELECTION FUNCTION
 def networkselect(opt):
+    """
+    Selection function for available networks.
+
+    Args:
+        opt: argparse.Namespace, contains all training-specific training parameters.
+    Returns:
+        Network of choice
+    """
     if opt.arch == 'googlenet':
         network =  GoogLeNet(opt)
     elif opt.arch == 'resnet50':
@@ -63,7 +89,18 @@ def networkselect(opt):
 
 """=================================================================================================================================="""
 class GoogLeNet(nn.Module):
+    """
+    Container for GoogLeNet s.t. it can be used for metric learning.
+    The Network has been broken down to allow for higher modularity, if one wishes
+    to target specific layers/blocks directly.
+    """
     def __init__(self, opt):
+        """
+        Args:
+            opt: argparse.Namespace, contains all training-specific parameters.
+        Returns:
+            Nothing!
+        """
         super(GoogLeNet, self).__init__()
 
         self.pars       = opt
@@ -84,7 +121,7 @@ class GoogLeNet(nn.Module):
         self.model.last_linear = torch.nn.Linear(self.model.last_linear.in_features, opt.embed_dim)
 
 
-    def forward(self, x, is_init_cluster_generation=False):
+    def forward(self, x):
         ### Initial Conv Layers
         x = self.model.conv3(self.model.conv2(self.model.maxpool1(self.model.conv1(x))))
         x = self.model.maxpool2(x)
@@ -97,12 +134,19 @@ class GoogLeNet(nn.Module):
         x = self.model.dropout(x)
 
         mod_x = self.model.last_linear(x)
+
+        #No Normalization is used if N-Pair Loss is the target criterion.
         return mod_x if self.pars.loss=='npair' else torch.nn.functional.normalize(mod_x, dim=-1)
 
 
 
 """============================================================="""
 class ResNet50(nn.Module):
+    """
+    Container for ResNet50 s.t. it can be used for metric learning.
+    The Network has been broken down to allow for higher modularity, if one wishes
+    to target specific layers/blocks directly.
+    """
     def __init__(self, opt, list_style=False, no_norm=False):
         super(ResNet50, self).__init__()
 
@@ -129,8 +173,10 @@ class ResNet50(nn.Module):
 
         for layerblock in self.layer_blocks:
             x = layerblock(x)
+            
         x = self.model.avgpool(x)
         x = x.view(x.size(0),-1)
 
         mod_x = self.model.last_linear(x)
+        #No Normalization is used if N-Pair Loss is the target criterion.
         return mod_x if self.pars.loss=='npair' else torch.nn.functional.normalize(mod_x, dim=-1)

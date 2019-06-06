@@ -13,24 +13,27 @@
 # limitations under the License.
 # ==============================================================================
 
+################## LIBRARIES ##############################
 import warnings
 warnings.filterwarnings("ignore")
 
-import numpy as np, os, sys, pandas as pd, csv
+import numpy as np, os, sys, pandas as pd, csv, random, datetime
+
 import torch, torch.nn as nn
 from torch.utils.data import Dataset
-from PIL import Image
 from torchvision import transforms
+
+from PIL import Image
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import random
-import faiss
+import pickle as pkl
+
 from sklearn import metrics
 from sklearn import cluster
 
+import faiss
+
 import losses as losses
-import datetime
-import pickle as pkl
 
 
 
@@ -38,8 +41,12 @@ import pickle as pkl
 ################# ACQUIRE NUMBER OF WEIGHTS #################
 def gimme_params(model):
     """
+    Provide number of trainable parameters (i.e. those requiring gradient computation) for input network.
+
     Args:
+        model: PyTorch Network
     Returns:
+        int, number of parameters.
     """
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
@@ -49,8 +56,12 @@ def gimme_params(model):
 ################# SAVE TRAINING PARAMETERS IN NICE STRING #################
 def gimme_save_string(opt):
     """
+    Taking the set of parameters and convert it to easy-to-read string, which can be stored later.
+
     Args:
+        opt: argparse.Namespace, contains all training-specific parameters.
     Returns:
+        string, returns string summary of parameters.
     """
     varx = vars(opt)
     base_str = ''
@@ -67,11 +78,16 @@ def gimme_save_string(opt):
 
 
 def f1_score(model_generated_cluster_labels, target_labels, feature_coll, computed_centroids):
-    #TODO: Add link to hdml repo
     """
-    NOTE: ADAPTED FROM
+    NOTE: MOSTLY ADAPTED FROM https://github.com/wzzheng/HDML on Hardness-Aware Deep Metric Learning.
+
     Args:
+        model_generated_cluster_labels: np.ndarray [n_samples x 1], Cluster labels computed on top of data embeddings.
+        target_labels:                  np.ndarray [n_samples x 1], ground truth labels for each data sample.
+        feature_coll:                   np.ndarray [n_samples x embed_dim], total data embedding made by network.
+        computed_centroids:             np.ndarray [num_cluster=num_classes x embed_dim], cluster coordinates
     Returns:
+        float, F1-score
     """
     from scipy.special import comb
 
@@ -89,16 +105,16 @@ def f1_score(model_generated_cluster_labels, target_labels, feature_coll, comput
 
     N = len(target_labels)
 
-    # cluster n_labels
+    #Cluster n_labels
     avail_labels = np.unique(target_labels)
     n_labels     = len(avail_labels)
 
-    # count the number of objects in each cluster
+    #Count the number of objects in each cluster
     count_cluster = np.zeros(n_labels)
     for i in range(n_labels):
         count_cluster[i] = len(np.where(target_labels == avail_labels[i])[0])
 
-    # build a mapping from item_id to item index
+    #Build a mapping from item_id to item index
     keys     = np.unique(labels_pred)
     num_item = len(keys)
     values   = range(num_item)
@@ -107,19 +123,19 @@ def f1_score(model_generated_cluster_labels, target_labels, feature_coll, comput
         item_map.update([(keys[i], values[i])])
 
 
-    # count the number of objects of each item
+    #Count the number of objects of each item
     count_item = np.zeros(num_item)
     for i in range(N):
         index = item_map[labels_pred[i]]
         count_item[index] = count_item[index] + 1
 
-    # compute True Positive (TP) plus False Positive (FP)
+    #Compute True Positive (TP) plus False Positive (FP) count
     tp_fp = 0
     for k in range(n_labels):
         if count_cluster[k] > 1:
             tp_fp = tp_fp + comb(count_cluster[k], 2)
 
-    # compute True Positive (TP)
+    #Compute True Positive (TP) count
     tp = 0
     for k in range(n_labels):
         member = np.where(target_labels == avail_labels[k])[0]
@@ -134,41 +150,48 @@ def f1_score(model_generated_cluster_labels, target_labels, feature_coll, comput
             if count[i] > 1:
                 tp = tp + comb(count[i], 2)
 
-    # False Positive (FP)
+    #Compute  False Positive (FP) count
     fp = tp_fp - tp
 
-    # compute False Negative (FN)
+    #Compute False Negative (FN) count
     count = 0
     for j in range(num_item):
         if count_item[j] > 1:
             count = count + comb(count_item[j], 2)
-
     fn = count - tp
 
     # compute F measure
-    P = tp / (tp + fp)
-    R = tp / (tp + fn)
     beta = 1
-    F = (beta*beta + 1) * P * R / (beta*beta * P + R)
+    P  = tp / (tp + fp)
+    R  = tp / (tp + fn)
+    F1 = (beta*beta + 1) * P * R / (beta*beta * P + R)
 
-    return F
+    return F1
 
 
 
 
 """============================================================================================================="""
-def eval_metrics_one_dataset(model, test_dataloader, device, k_vals=[1,2,4,8], opt=None, ):
+def eval_metrics_one_dataset(model, test_dataloader, device, k_vals, opt):
     """
+    Compute evaluation metrics on test-dataset, e.g. NMI, F1 and Recall @ k.
+
     Args:
+        model:              PyTorch network, network to compute evaluation metrics for.
+        test_dataloader:    PyTorch Dataloader, dataloader for test dataset, should have no shuffling and correct processing.
+        device:             torch.device, Device to run inference on.
+        k_vals:             list of int, Recall values to compute
+        opt:                argparse.Namespace, contains all training-specific parameters.
     Returns:
+        F1 score (float), NMI score (float), recall_at_k (list of float), data embedding (np.ndarray)
     """
     torch.cuda.empty_cache()
 
     _ = model.eval()
     n_classes = len(test_dataloader.dataset.avail_classes)
 
-    ### For all test images, extract features
     with torch.no_grad():
+        ### For all test images, extract features
         target_labels, feature_coll = [],[]
         final_iter = tqdm(test_dataloader, desc='Computing Evaluation Metrics...')
         image_paths= [x[0] for x in test_dataloader.dataset.image_list]
@@ -183,7 +206,7 @@ def eval_metrics_one_dataset(model, test_dataloader, device, k_vals=[1,2,4,8], o
 
         torch.cuda.empty_cache()
 
-        ### Set CPU Cluster index
+        ### Set Faiss CPU Cluster index
         cpu_cluster_index = faiss.IndexFlatL2(feature_coll.shape[-1])
         kmeans            = faiss.Clustering(feature_coll.shape[-1], n_classes)
         kmeans.niter = 20
@@ -222,18 +245,27 @@ def eval_metrics_one_dataset(model, test_dataloader, device, k_vals=[1,2,4,8], o
 
 
 
-def eval_metrics_query_and_gallery_dataset(model, query_dataloader, gallery_dataloader, device, k_vals=[1,10,20,30,50], opt=None):
+def eval_metrics_query_and_gallery_dataset(model, query_dataloader, gallery_dataloader, device, k_vals, opt):
     """
+    Compute evaluation metrics on test-dataset, e.g. NMI, F1 and Recall @ k.
+
     Args:
+        model:               PyTorch network, network to compute evaluation metrics for.
+        query_dataloader:    PyTorch Dataloader, dataloader for query dataset, for which nearest neighbours in the gallery dataset are retrieved.
+        gallery_dataloader:  PyTorch Dataloader, dataloader for gallery dataset, provides target samples which are to be retrieved in correspondance to the query dataset.
+        device:              torch.device, Device to run inference on.
+        k_vals:              list of int, Recall values to compute
+        opt:                 argparse.Namespace, contains all training-specific parameters.
     Returns:
+        F1 score (float), NMI score (float), recall_at_ks (list of float), query data embedding (np.ndarray), gallery data embedding (np.ndarray)
     """
     torch.cuda.empty_cache()
 
     _ = model.eval()
     n_classes = len(query_dataloader.dataset.avail_classes)
 
-    ### For all test images, extract features
     with torch.no_grad():
+        ### For all query test images, extract features
         query_target_labels, query_feature_coll     = [],[]
         query_image_paths   = [x[0] for x in query_dataloader.dataset.image_list]
         query_iter = tqdm(query_dataloader, desc='Extraction Query Features')
@@ -243,6 +275,7 @@ def eval_metrics_query_and_gallery_dataset(model, query_dataloader, gallery_data
             out = model(input_img.to(device))
             query_feature_coll.extend(out.cpu().detach().numpy().tolist())
 
+        ### For all gallery test images, extract features
         gallery_target_labels, gallery_feature_coll = [],[]
         gallery_image_paths = [x[0] for x in gallery_dataloader.dataset.image_list]
         gallery_iter = tqdm(gallery_dataloader, desc='Extraction Gallery Features')
@@ -258,7 +291,6 @@ def eval_metrics_query_and_gallery_dataset(model, query_dataloader, gallery_data
 
         torch.cuda.empty_cache()
 
-        #################### COMPUTE NMI #######################
         ### Set CPU Cluster index
         stackset    = np.concatenate([query_feature_coll, gallery_feature_coll],axis=0)
         stacklabels = np.concatenate([query_target_labels, gallery_target_labels],axis=0)
@@ -293,6 +325,7 @@ def eval_metrics_query_and_gallery_dataset(model, query_dataloader, gallery_data
             recall_all_k.append(recall_at_k)
         recall_str = ', '.join('@{0}: {1:.4f}'.format(k,rec) for k,rec in zip(k_vals, recall_all_k))
 
+        ### Compute F1 score
         F1 = f1_score(model_generated_cluster_labels, stacklabels, stackset, computed_centroids)
 
     return F1, NMI, recall_all_k, query_feature_coll, gallery_feature_coll
@@ -303,12 +336,14 @@ def eval_metrics_query_and_gallery_dataset(model, query_dataloader, gallery_data
 ####### RECOVER CLOSEST EXAMPLE IMAGES #######
 def recover_closest_one_dataset(feature_matrix_all, image_paths, save_path, n_image_samples=10, n_closest=3):
     """
+    Provide sample recoveries.
+
     Args:
-        feature_matrix_all:
-        image_paths:
-        save_path:
-        n_image_samples:
-        n_closest:
+        feature_matrix_all: np.ndarray [n_samples x embed_dim], full data embedding of test samples.
+        image_paths:        list [n_samples], list of datapaths corresponding to <feature_matrix_all>
+        save_path:          str, where to store sample image.
+        n_image_samples:    Number of sample recoveries.
+        n_closest:          Number of closest recoveries to show.
     Returns:
         Nothing!
     """
@@ -339,14 +374,16 @@ def recover_closest_one_dataset(feature_matrix_all, image_paths, save_path, n_im
 ####### RECOVER CLOSEST EXAMPLE IMAGES #######
 def recover_closest_inshop(query_feature_matrix_all, gallery_feature_matrix_all, query_image_paths, gallery_image_paths, save_path, n_image_samples=10, n_closest=3):
     """
+    Provide sample recoveries.
+
     Args:
-        query_feature_matrix_all:
-        gallery_feature_matrix_all:
-        query_image_paths:
-        gallery_image_paths:
-        save_path:
-        n_image_samples:
-        n_closest:
+        query_feature_matrix_all:   np.ndarray [n_query_samples x embed_dim], full data embedding of query samples.
+        gallery_feature_matrix_all: np.ndarray [n_gallery_samples x embed_dim], full data embedding of gallery samples.
+        query_image_paths:          list [n_samples], list of datapaths corresponding to <query_feature_matrix_all>
+        gallery_image_paths:        list [n_samples], list of datapaths corresponding to <gallery_feature_matrix_all>
+        save_path:          str, where to store sample image.
+        n_image_samples:    Number of sample recoveries.
+        n_closest:          Number of closest recoveries to show.
     Returns:
         Nothing!
     """
@@ -357,7 +394,6 @@ def recover_closest_inshop(query_feature_matrix_all, gallery_feature_matrix_all,
     faiss_search_index.add(gallery_feature_matrix_all)
     _, closest_feature_idxs = faiss_search_index.search(query_feature_matrix_all, n_closest)
 
-    ### TODO: EXAMINE THIS SECTION HERE FOR INSHOP-NEAREST SAMPLE RETRIEVAL
     image_paths  = gallery_image_paths[closest_feature_idxs]
     image_paths  = np.concatenate([query_image_paths.reshape(-1,1), image_paths],axis=-1)
 
@@ -375,7 +411,6 @@ def recover_closest_inshop(query_feature_matrix_all, gallery_feature_matrix_all,
     f.set_size_inches(10,20)
     f.tight_layout()
     f.savefig(save_path)
-    # plt.show()
     plt.close()
 
 
@@ -384,11 +419,14 @@ def recover_closest_inshop(query_feature_matrix_all, gallery_feature_matrix_all,
 ################## SET NETWORK TRAINING CHECKPOINT #####################
 def set_checkpoint(model, opt, progress_saver, savepath):
     """
+    Store relevant parameters (model and progress saver, as well as parameter-namespace).
+    Can be easily extend for other stuff.
+
     Args:
-        model:
-        opt:
-        progress_saver:
-        savepath:
+        model:          PyTorch network, network whose parameters are to be saved.
+        opt:            argparse.Namespace, includes all training-specific parameters
+        progress_saver: subclass of LOGGER-class, contains a running memory of all training metrics.
+        savepath:       str, where to save checkpoint.
     Returns:
         Nothing!
     """
@@ -402,13 +440,15 @@ def set_checkpoint(model, opt, progress_saver, savepath):
 ################## WRITE TO CSV FILE #####################
 class CSV_Writer():
     """
-    Purpose:
+    Class to append newly compute training metrics to a csv file
+    for data logging.
+    Is used together with the LOGGER class.
     """
     def __init__(self, save_path, columns):
         """
         Args:
-            save_path:
-            columns:
+            save_path: str, where to store the csv file
+            columns:   list of str, name of csv columns under which the resp. metrics are stored.
         Returns:
             Nothing!
         """
@@ -421,8 +461,10 @@ class CSV_Writer():
 
     def log(self, inputs):
         """
+        log one set of entries to the csv.
+
         Args:
-            inputs:
+            inputs: [list of int/str/float], values to append to the csv. Has to be of the same length as self.columns.
         Returns:
             Nothing!
         """
@@ -435,30 +477,36 @@ class CSV_Writer():
 ################## PLOT SUMMARY IMAGE #####################
 class InfoPlotter():
     """
-    Purpose:
+    Plotter class to visualize training progression by showing
+    different metrics.
     """
     def __init__(self, save_path, title='Training Log', figsize=(20,15)):
         """
         Args:
-            save_path:
-            title:
-            figsize:
+            save_path: str, where to store the create plot.
+            title:     placeholder title of plot
+            figsize:   base size of saved figure
         Returns:
             Nothing!
         """
         self.save_path = save_path
         self.title     = title
         self.figsize   = figsize
+        #Colors for validation lines
         self.v_colors    = ['r','g','b','y','m','k','c']
+        #Colors for training lines
         self.t_colors    = ['k','b','r','g']
 
-    def make_plot(self, t_epochs, v_epochs, t_loss, v_metrics, t_labels, v_labels, appendix=None):
+    def make_plot(self, t_epochs, v_epochs, t_metrics, v_metrics, t_labels, v_labels, appendix=None):
         """
+        Given a list of iterated epochs, visualize the progression of various training/testing metrics.
+
         Args:
-            x:
-            y1:
-            y2s:
-            labels:
+            t_epochs:  [list of int/float], list of epochs for which training metrics were collected (e.g. Training Loss)
+            v_epochs:  [list of int/float], list of epochs for which validation metrics were collected (e.g. Recall @ k)
+            t_metrics: [list of float], list of training metrics per epoch
+            v_metrics: [list of list of int/float], contains all computed validation metrics
+            t_labels, v_labels: [list of str], names for each metric that is plotted.
         Returns:
             Nothing!
         """
@@ -466,7 +514,8 @@ class InfoPlotter():
 
         f,axes = plt.subplots(1,2)
 
-        for i in range(len(t_loss)):
+        #Visualize Training Loss
+        for i in range(len(t_metrics)):
             axes[0].plot(t_epochs, t_loss[i], '-{}'.format(self.t_colors[i]), linewidth=1, label=t_labels[i])
         axes[0].set_title('Training Performance', fontsize=19)
 
@@ -475,6 +524,7 @@ class InfoPlotter():
         axes[0].tick_params(axis='both', which='major', labelsize=16)
         axes[0].tick_params(axis='both', which='minor', labelsize=16)
 
+        #Visualize Validation metrics
         for i in range(len(v_metrics)):
             axes[1].plot(v_epochs, v_metrics[i], '-{}'.format(self.v_colors[i]), linewidth=1, label=v_labels[i])
         axes[1].set_title(self.title, fontsize=19)
@@ -486,7 +536,7 @@ class InfoPlotter():
 
         f.set_size_inches(2*self.figsize[0], self.figsize[1])
 
-        savepath = self.save_path if appendix is None else self.save_path
+        savepath = self.save_path
         f.savefig(self.save_path, bbox_inches='tight')
 
         plt.close()
@@ -495,23 +545,37 @@ class InfoPlotter():
 ################## GENERATE LOGGING FOLDER/FILES #######################
 def set_logging(opt):
     """
+    Generate the folder in which everything is saved.
+    If opt.savename is given, folder will take on said name.
+    If not, a name based on the start time is provided.
+    If the folder already exists, it will by iterated until it can be created without
+    deleting existing data.
+    The current opt.save_path will be extended to account for the new save_folder name.
+
     Args:
-        opt:
+        opt: argparse.Namespace, contains all training-specific parameters.
     Returns:
         Nothing!
     """
     checkfolder = opt.save_path+'/'+opt.savename
+
+    #Create start-time-based name if opt.savename is not give.
     if opt.savename == '':
         date = datetime.datetime.now()
         time_string = '{}-{}-{}-{}-{}-{}'.format(date.year, date.month, date.day, date.hour, date.minute, date.second)
         checkfolder = opt.save_path+'/{}_{}_'.format(opt.dataset.upper(), opt.arch.upper())+time_string
+
+    #If folder already exists, iterate over it until is doesn't.
     counter     = 1
     while os.path.exists(checkfolder):
         checkfolder = opt.save_path+'/'+opt.savename+'_'+str(counter)
         counter += 1
+
+    #Create Folder
     os.makedirs(checkfolder)
     opt.save_path = checkfolder
 
+    #Store training parameters as text and pickle in said folder.
     with open(opt.save_path+'/Parameter_Info.txt','w') as f:
         f.write(gimme_save_string(opt))
     pkl.dump(opt,open(opt.save_path+"/hypa.pkl","wb"))
@@ -519,15 +583,20 @@ def set_logging(opt):
 
 class LOGGER():
     """
-    Purpose:
+    This class provides a collection of logging properties that are useful for training.
+    These include setting the save folder, in which progression of training/testing metrics is visualized,
+    csv log-files are stored, sample recoveries are plotted and an internal data saver.
     """
     def __init__(self, opt, metrics_to_log, name='Basic', start_new=True):
         """
         Args:
-            opt:
-            metrics_to_log:
-            name:
-            start_new:
+            opt:               argparse.Namespace, contains all training-specific parameters.
+            metrics_to_log:    dict, dictionary which shows in what structure the data should be saved.
+                               is given as the output of aux.metrics_to_examine. Example:
+                               {'train': ['Epochs', 'Time', 'Train Loss', 'Time'],
+                                'val': ['Epochs','Time','NMI','F1', 'Recall @ 1','Recall @ 2','Recall @ 4','Recall @ 8']}
+            name:              Name of this logger. Will be used to distinguish logged files from other LOGGER instances.
+            start_new:         If set to true, a new save folder will be created initially.
         Returns:
             Nothing!
         """
@@ -552,19 +621,21 @@ class LOGGER():
 
     def provide_progress_saver(self, metrics_to_log):
         """
+        Provide Progress Saver dictionary.
+
         Args:
-            dataset:
-            metrics_to_log:
+            metrics_to_log: see __init__(). Describes the structure of Progress_Saver.
         """
         Progress_Saver = {key:{sub_key:[] for sub_key in metrics_to_log[key]} for key in metrics_to_log.keys()}
         return Progress_Saver
 
     def log(self, main_keys, metric_keys, values):
         """
+        Actually log new values in csv and Progress Saver dict internally.
         Args:
-            main_keys:
-            metric_keys:    Needs to follow the list length of self.progress_saver[main_key(s)]
-            values:         Needs to be a list of the same structure as metric_keys
+            main_keys:      Main key in which data will be stored. Normally is either 'train' for training metrics or 'val' for validation metrics.
+            metric_keys:    Needs to follow the list length of self.progress_saver[main_key(s)]. List of metric keys that are extended with new values.
+            values:         Needs to be a list of the same structure as metric_keys. Actual values that are appended.
         """
         if not isinstance(main_keys, list):   main_keys = [main_keys]
         if not isinstance(metric_keys, list): metric_keys = [metric_keys]
@@ -574,19 +645,25 @@ class LOGGER():
         for main_key in main_keys:
             for value, metric_key in zip(values, metric_keys):
                 self.progress_saver[main_key][metric_key].append(value)
+
         #Append data to csv.
         self.csv_loggers[main_key].log(values)
 
     def update_info_plot(self):
         """
-        Args: None
-        Returns: Nothing!
+        Create a new updated version of training/metric progression plot.
+
+        Args:
+            None
+        Returns:
+            Nothing!
         """
         t_epochs         = self.progress_saver['val']['Epochs']
         t_loss_list      = [self.progress_saver['train']['Train Loss']]
         t_legend_handles = ['Train Loss']
 
         v_epochs         = self.progress_saver['val']['Epochs']
+        #Because Vehicle-ID normally uses three different test sets, a distinction has to be made.
         if self.prop.dataset != 'vehicle_id':
             title = ' | '.join(key+': {0:3.3f}'.format(np.max(item)) for key,item in self.progress_saver['val'].items() if key not in ['Time', 'Epochs'])
             self.info_plot.title = title
@@ -595,10 +672,10 @@ class LOGGER():
 
             self.info_plot.make_plot(t_epochs, v_epochs, t_loss_list, v_metric_list, t_legend_handles, v_legend_handles)
         else:
+            #Iterate over all test sets.
             for i in range(3):
                 title = ' | '.join(key+': {0:3.3f}'.format(np.max(item)) for key,item in self.progress_saver['val'].items() if key not in ['Time', 'Epochs'] and 'Set {}'.format(i) in key)
                 self.info_plot['Set {}'.format(i)].title = title
-                #### HERE
                 v_metric_list    = [self.progress_saver['val'][key] for key in self.progress_saver['val'].keys() if key not in ['Time', 'Epochs'] and 'Set {}'.format(i) in key]
                 v_legend_handles = [key for key in self.progress_saver['val'].keys() if key not in ['Time', 'Epochs'] and 'Set {}'.format(i) in key]
                 self.info_plot['Set {}'.format(i)].make_plot(t_epochs, v_epochs, t_loss_list, v_metric_list, t_legend_handles, v_legend_handles, appendix='set_{}'.format(i))
@@ -610,10 +687,10 @@ def metrics_to_examine(dataset, k_vals):
     -> Epochs, Time, NMI, F1 & Recall @ k for validation
 
     Args:
-        dataset:
-        k_vals:
+        dataset: str, dataset for which a storing structure for LOGGER.progress_saver is to be made.
+        k_vals:  list of int, Recall @ k - values.
     Returns:
-        metric_dict:
+        metric_dict: Dictionary representing the storing structure for LOGGER.progress_saver. See LOGGER.__init__() for an example.
     """
     metric_dict        = {'train':['Epochs','Time','Train Loss']}
 
@@ -638,8 +715,10 @@ def run_kmeans(features, n_cluster):
     Run kmeans on a set of features to find <n_cluster> cluster.
 
     Args:
-        features:
-        n_cluster:
+        features:  np.ndarrary [n_samples x embed_dim], embedding training/testing samples for which kmeans should be performed.
+        n_cluster: int, number of cluster.
+    Returns:
+        cluster_assignments: np.ndarray [n_samples x 1], per sample provide the respective cluster label it belongs to.
     """
     n_samples, dim = features.shape
     kmeans = faiss.Kmeans(dim, n_cluster)
@@ -653,11 +732,12 @@ def run_kmeans(features, n_cluster):
 """============================================================================================================="""
 def save_graph(opt, model):
     """
-    Generate Network Graph
+    Generate Network Graph.
+    NOTE: Requires the installation of the graphviz library on you system.
 
     Args:
-        opt:
-        model:
+        opt:   argparse.Namespace, contains all training-specific parameters.
+        model: PyTorch Network, network for which the computational graph should be visualized.
     Returns:
         Nothing!
     """

@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+################# LIBRARIES ###############################
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -27,9 +28,18 @@ from tqdm import tqdm
 import pretrainedmodels.utils as utils
 import auxiliaries as aux
 
+
+"""============================================================================"""
 ################ FUNCTION TO RETURN ALL DATALOADERS NECESSARY ####################
 def give_dataloaders(dataset, opt):
-    ### ImageNet Properties
+    """
+    Args:
+        dataset: string, name of dataset for which the dataloaders should be returned.
+        opt:     argparse.Namespace, contains all training-specific parameters.
+    Returns:
+        dataloaders: dict of dataloaders for training, testing and evaluation on training.
+    """
+    #Dataset selection
     if opt.dataset=='cub200':
         datasets = give_CUB200_datasets(opt)
     elif opt.dataset=='cars196':
@@ -43,6 +53,7 @@ def give_dataloaders(dataset, opt):
     else:
         raise Exception('No Dataset >{}< available!'.format(dataset))
 
+    #Move datasets to dataloaders.
     dataloaders = {}
     for key,dataset in datasets.items():
         is_val = dataset.is_validation
@@ -51,20 +62,30 @@ def give_dataloaders(dataset, opt):
     return dataloaders
 
 
-################# FUNCTIONS TO RETURN TRAIN/VAL PYTORCH DATASETS FOR CUB200, CARS196 AND STANFORD ONLINE PRODUCTS ####################################
+"""============================================================================"""
+################# FUNCTIONS TO RETURN TRAIN/VAL PYTORCH DATASETS FOR CUB200, CARS196, STANFORD ONLINE PRODUCTS, IN-SHOP CLOTHES, PKU VEHICLE-ID ####################################
 def give_CUB200_datasets(opt):
     """
-    This function generates a training and testing dataloader for Metric Learning on the CUB-200-2011 dataset.
-    For Metric Learning, the dataset is sorted by name, and the first halt used for training while the last half is used for testing.
+    This function generates a training, testing and evaluation dataloader for Metric Learning on the CUB-200-2011 dataset.
+    For Metric Learning, the dataset classes are sorted by name, and the first half used for training while the last half is used for testing.
     So no random shuffling of classes.
+
+    Args:
+        opt: argparse.Namespace, contains all traininig-specific parameters.
+    Returns:
+        dict of PyTorch datasets for training, testing and evaluation.
     """
     image_sourcepath  = opt.source_path+'/images'
+    #Find available data classes.
     image_classes = sorted([x for x in os.listdir(image_sourcepath) if '._' not in x], key=lambda x: int(x.split('.')[0]))
+    #Make a index-to-labelname conversion dict.
     conversion    = {int(x.split('.')[0]):x.split('.')[-1] for x in image_classes}
+    #Generate a list of tuples (class_label, image_path)
     image_list    = {int(key.split('.')[0]):sorted([image_sourcepath+'/'+key+'/'+x for x in os.listdir(image_sourcepath+'/'+key) if '._' not in x]) for key in image_classes}
     image_list    = [[(key,img_path) for img_path in image_list[key]] for key in image_list.keys()]
     image_list    = [x for y in image_list for x in y]
 
+    #Image-dict of shape {class_idx:[list of paths to images belong to this class] ...}
     image_dict    = {}
     for key, img_path in image_list:
         key = key-1
@@ -73,10 +94,9 @@ def give_CUB200_datasets(opt):
         image_dict[key].append(img_path)
 
     keys = sorted(list(image_dict.keys()))
-    # random.shuffle(keys)
+
     #Following "Deep Metric Learning via Lifted Structured Feature Embedding", we use the first half of classes for training.
     train,test = keys[:len(keys)//2], keys[len(keys)//2:]
-
     train_image_dict, val_image_dict = {key:image_dict[key] for key in train},{key:image_dict[key] for key in test}
 
 
@@ -93,17 +113,26 @@ def give_CUB200_datasets(opt):
 
 def give_CARS196_datasets(opt):
     """
-    This function generates a training and testing dataloader for Metric Learning on the CARS-196 dataset.
-    For Metric Learning, the dataset is sorted by name, and the first halt used for training while the last half is used for testing.
+    This function generates a training, testing and evaluation dataloader for Metric Learning on the CARS196 dataset.
+    For Metric Learning, the dataset classes are sorted by name, and the first half used for training while the last half is used for testing.
     So no random shuffling of classes.
+
+    Args:
+        opt: argparse.Namespace, contains all traininig-specific parameters.
+    Returns:
+        dict of PyTorch datasets for training, testing and evaluation.
     """
     image_sourcepath  = opt.source_path+'/images'
+    #Find available data classes.
     image_classes = sorted([x for x in os.listdir(image_sourcepath)])
+    #Make a index-to-labelname conversion dict.
     conversion    = {i:x for i,x in enumerate(image_classes)}
+    #Generate a list of tuples (class_label, image_path)
     image_list    = {i:sorted([image_sourcepath+'/'+key+'/'+x for x in os.listdir(image_sourcepath+'/'+key)]) for i,key in enumerate(image_classes)}
     image_list    = [[(key,img_path) for img_path in image_list[key]] for key in image_list.keys()]
     image_list    = [x for y in image_list for x in y]
 
+    #Image-dict of shape {class_idx:[list of paths to images belong to this class] ...}
     image_dict    = {}
     for key, img_path in image_list:
         key = key-1
@@ -112,7 +141,7 @@ def give_CARS196_datasets(opt):
         image_dict[key].append(img_path)
 
     keys = sorted(list(image_dict.keys()))
-    # random.shuffle(keys)
+
     #Following "Deep Metric Learning via Lifted Structured Feature Embedding", we use the first half of classes for training.
     train,test = keys[:len(keys)//2], keys[len(keys)//2:]
     train_image_dict, val_image_dict = {key:image_dict[key] for key in train},{key:image_dict[key] for key in test}
@@ -129,18 +158,30 @@ def give_CARS196_datasets(opt):
 
 
 def give_OnlineProducts_datasets(opt):
+    """
+    This function generates a training, testing and evaluation dataloader for Metric Learning on the Online-Products dataset.
+    For Metric Learning, training and test sets are provided by given text-files, Ebay_train.txt & Ebay_test.txt.
+    So no random shuffling of classes.
+
+    Args:
+        opt: argparse.Namespace, contains all traininig-specific parameters.
+    Returns:
+        dict of PyTorch datasets for training, testing and evaluation.
+    """
     image_sourcepath  = opt.source_path+'/images'
+    #Load text-files containing classes and imagepaths.
     training_files = pd.read_table(opt.source_path+'/Info_Files/Ebay_train.txt', header=0, delimiter=' ')
     test_files     = pd.read_table(opt.source_path+'/Info_Files/Ebay_test.txt', header=0, delimiter=' ')
 
-
+    #Generate Conversion dict.
     conversion = {}
     for class_id, path in zip(training_files['class_id'],training_files['path']):
         conversion[class_id] = path.split('/')[0]
     for class_id, path in zip(test_files['class_id'],test_files['path']):
         conversion[class_id] = path.split('/')[0]
 
-    train_image_dict, val_image_dict, super_train_image_dict  = {},{},{}
+    #Generate image_dicts of shape {class_idx:[list of paths to images belong to this class] ...}
+    train_image_dict, val_image_dict  = {},{}
     for key, img_path in zip(training_files['class_id'],training_files['path']):
         key = key-1
         if not key in train_image_dict.keys():
@@ -153,6 +194,7 @@ def give_OnlineProducts_datasets(opt):
             val_image_dict[key] = []
         val_image_dict[key].append(image_sourcepath+'/'+img_path)
 
+    ### Uncomment this if super-labels should be used to generate resp.datasets
     # super_conversion = {}
     # for super_class_id, path in zip(training_files['super_class_id'],training_files['path']):
     #     conversion[super_class_id] = path.split('/')[0]
@@ -178,14 +220,30 @@ def give_OnlineProducts_datasets(opt):
 
 
 def give_InShop_datasets(opt):
+    """
+    This function generates a training, testing and evaluation dataloader for Metric Learning on the In-Shop Clothes dataset.
+    For Metric Learning, training and test sets are provided by one text file, list_eval_partition.txt.
+    So no random shuffling of classes.
+
+    Args:
+        opt: argparse.Namespace, contains all traininig-specific parameters.
+    Returns:
+        dict of PyTorch datasets for training, testing (by query and gallery separation) and evaluation.
+    """
+    #Load train-test-partition text file.
     data_info = np.array(pd.read_table(opt.source_path+'/Eval/list_eval_partition.txt', header=1, delim_whitespace=True))[1:,:]
+    #Separate into training dataset and query/gallery dataset for testing.
     train, query, gallery   = data_info[data_info[:,2]=='train'][:,:2], data_info[data_info[:,2]=='query'][:,:2], data_info[data_info[:,2]=='gallery'][:,:2]
+
+    #Generate conversions
     lab_conv = {x:i for i,x in enumerate(np.unique(np.array([int(x.split('_')[-1]) for x in train[:,1]])))}
     train[:,1] = np.array([lab_conv[int(x.split('_')[-1])] for x in train[:,1]])
+
     lab_conv = {x:i for i,x in enumerate(np.unique(np.array([int(x.split('_')[-1]) for x in np.concatenate([query[:,1], gallery[:,1]])])))}
     query[:,1]   = np.array([lab_conv[int(x.split('_')[-1])] for x in query[:,1]])
     gallery[:,1] = np.array([lab_conv[int(x.split('_')[-1])] for x in gallery[:,1]])
 
+    #Generate Image-Dicts for training, query and gallery of shape {class_idx:[list of paths to images belong to this class] ...}
     train_image_dict    = {}
     for img_path, key in train:
         if not key in train_image_dict.keys():
@@ -204,6 +262,7 @@ def give_InShop_datasets(opt):
             gallery_image_dict[key] = []
         gallery_image_dict[key].append(opt.source_path+'/'+img_path)
 
+    ### Uncomment this if super-labels should be used to generate resp.datasets
     # super_train_image_dict, counter, super_assign = {},0,{}
     # for img_path, _ in train:
     #     key = '_'.join(img_path.split('/')[1:3])
@@ -217,9 +276,9 @@ def give_InShop_datasets(opt):
     #     super_train_image_dict[key].append(opt.source_path+'/'+img_path)
     # super_train_dataset = BaseTripletDataset(super_train_image_dict, opt, is_validation=True)
 
-    train_dataset     = BaseTripletDataset(train_image_dict, opt, samples_per_class=opt.samples_per_class)
-    eval_dataset      = BaseTripletDataset(train_image_dict, opt, is_validation=True)
-    query_dataset     = BaseTripletDataset(query_image_dict, opt, is_validation=True)
+    train_dataset     = BaseTripletDataset(train_image_dict, opt,   samples_per_class=opt.samples_per_class)
+    eval_dataset      = BaseTripletDataset(train_image_dict, opt,   is_validation=True)
+    query_dataset     = BaseTripletDataset(query_image_dict, opt,   is_validation=True)
     gallery_dataset   = BaseTripletDataset(gallery_image_dict, opt, is_validation=True)
 
     return {'training':train_dataset, 'testing_query':query_dataset, 'evaluation':eval_dataset, 'testing_gallery':gallery_dataset}
@@ -227,11 +286,23 @@ def give_InShop_datasets(opt):
 
 
 def give_VehicleID_datasets(opt):
-    train = np.array(pd.read_table(opt.source_path+'/train_test_split/train_list.txt', header=None, delim_whitespace=True))
+    """
+    This function generates a training, testing and evaluation dataloader for Metric Learning on the PKU Vehicle dataset.
+    For Metric Learning, training and (multiple) test sets are provided by separate text files, train_list and test_list_<n_classes_2_test>.txt.
+    So no random shuffling of classes.
+
+    Args:
+        opt: argparse.Namespace, contains all traininig-specific parameters.
+    Returns:
+        dict of PyTorch datasets for training, testing and evaluation.
+    """
+    #Load respective text-files
+    train       = np.array(pd.read_table(opt.source_path+'/train_test_split/train_list.txt', header=None, delim_whitespace=True))
     small_test  = np.array(pd.read_table(opt.source_path+'/train_test_split/test_list_800.txt', header=None, delim_whitespace=True))
     medium_test = np.array(pd.read_table(opt.source_path+'/train_test_split/test_list_1600.txt', header=None, delim_whitespace=True))
     big_test    = np.array(pd.read_table(opt.source_path+'/train_test_split/test_list_2400.txt', header=None, delim_whitespace=True))
 
+    #Generate conversions
     lab_conv = {x:i for i,x in enumerate(np.unique(train[:,1]))}
     train[:,1] = np.array([lab_conv[x] for x in train[:,1]])
     lab_conv = {x:i for i,x in enumerate(np.unique(np.concatenate([small_test[:,1], medium_test[:,1], big_test[:,1]])))}
@@ -239,6 +310,7 @@ def give_VehicleID_datasets(opt):
     medium_test[:,1] = np.array([lab_conv[x] for x in medium_test[:,1]])
     big_test[:,1]    = np.array([lab_conv[x] for x in big_test[:,1]])
 
+    #Generate Image-Dicts for training and different testings of shape {class_idx:[list of paths to images belong to this class] ...}
     train_image_dict    = {}
     for img_path, key in train:
         if not key in train_image_dict.keys():
@@ -278,7 +350,24 @@ def give_VehicleID_datasets(opt):
 
 ################## BASIC PYTORCH DATASET USED FOR ALL DATASETS ##################################
 class BaseTripletDataset(Dataset):
+    """
+    Dataset class to provide (augmented) correctly prepared training samples corresponding to standard DML literature.
+    This includes normalizing to ImageNet-standards, and Random & Resized cropping of shapes 224 for ResNet50 and 227 for
+    GoogLeNet during Training. During validation, only resizing to 256 or center cropping to 224/227 is performed.
+    """
     def __init__(self, image_dict, opt, samples_per_class=8, is_validation=False):
+        """
+        Dataset Init-Function.
+
+        Args:
+            image_dict:         dict, Dictionary of shape {class_idx:[list of paths to images belong to this class] ...} providing all the training paths and classes.
+            opt:                argparse.Namespace, contains all training-specific parameters.
+            samples_per_class:  Number of samples to draw from one class before moving to the next when filling the batch.
+            is_validation:      If is true, dataset properties for validation/testing are used instead of ones for training.
+        Returns:
+            Nothing!
+        """
+        #Define length of dataset
         self.n_files     = np.sum([len(image_dict[key]) for key in image_dict.keys()])
 
         self.is_validation = is_validation
@@ -288,11 +377,11 @@ class BaseTripletDataset(Dataset):
 
         self.avail_classes    = sorted(list(self.image_dict.keys()))
 
-        #Convert image dictionary from classname:content to class_idx:content
+        #Convert image dictionary from classname:content to class_idx:content, because the initial indices are not necessarily from 0 - <n_classes>.
         self.image_dict    = {i:self.image_dict[key] for i,key in enumerate(self.avail_classes)}
         self.avail_classes = sorted(list(self.image_dict.keys()))
 
-        #
+        #Init. properties that are used when filling up batches.
         if not self.is_validation:
             self.samples_per_class = samples_per_class
             #Select current class to sample images from up to <samples_per_class>
@@ -300,7 +389,7 @@ class BaseTripletDataset(Dataset):
             self.classes_visited = [self.current_class, self.current_class]
             self.n_samples_drawn = 0
 
-        #
+        #Data augmentation/processing methods.
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
         transf_list = []
         if not self.is_validation:
@@ -313,24 +402,35 @@ class BaseTripletDataset(Dataset):
         transf_list.extend([transforms.ToTensor(), normalize])
         self.transform = transforms.Compose(transf_list)
 
-        #
+        #Convert Image-Dict to list of (image_path, image_class). Allows for easier direct sampling.
         self.image_list = [[(x,key) for x in self.image_dict[key]] for key in self.image_dict.keys()]
         self.image_list = [x for y in self.image_list for x in y]
 
-        #
-        self.sample_probs = np.ones(len(self.image_list))/len(self.image_list)
-
-        #
+        #Flag that denotes if dataset is called for the first time.
         self.is_init = True
 
 
     def ensure_3dim(self, img):
+        """
+        Function that ensures that the input img is three-dimensional.
+
+        Args:
+            img: PIL.Image, image which is to be checked for three-dimensionality (i.e. if some images are black-and-white in an otherwise coloured dataset).
+        Returns:
+            Checked PIL.Image img.
+        """
         if len(img.size)==2:
             img = img.convert('RGB')
         return img
 
 
     def __getitem__(self, idx):
+        """
+        Args:
+            idx: Sample idx for training sample
+        Returns:
+            tuple of form (sample_class, torch.Tensor() of input image)
+        """
         if self.is_init:
             self.current_class = self.avail_classes[idx%len(self.avail_classes)]
             self.is_init = False

@@ -185,8 +185,30 @@ If `--savename` is not set, a default name based on the starting date will be ch
 If one wishes to simply use standard parameters and wants to get close to literature results (more or less, depends on seeds and overall training scheduling), refer to `sample_training_runs.sh`, which contains a list of executable one-liners.
 
 
+### [3.] Implementation Notes regarding Extendability:
 
-### [3.] Additional Notes:
+To extend or test other sampling or loss methods, simply do:
+
+__For Batch-based Sampling:__  
+In `losses.py`, add the sampling method, which should act on a batch (and the resp. set of labels), e.g.:
+```
+def new_sampling(self, batch, label, **additional_parameters): ...
+```
+This function should, if it needs to run with existing losses, a list of tuples containing indexes with respect to the batch, e.g. for sampling methods returning triplets:
+```
+return [(anchor_idx, positive_idx, negative_idx) for anchor_idx, positive_idx, negative_idx in zip(anchor_idxs, positive_idxs, negative_idxs)]
+```
+Also, don't forget to add a handle in `Sampler.__init__()`.
+
+__For Data-specific Sampling:__  
+To influence the data samples used to generate the batches, in `datasets.py` edit `BaseTripletDataset`.
+
+
+__For New Loss Functions:__  
+Simply add a new class inheriting from `torch.nn.Module`. Refer to other loss variants to see how to do so. In general, include an instance of the `Sampler`-class, which will provide sampled data tuples during a `forward()`-pass, by calling `self.sampler_instance.give(batch, labels, **additional_parameters)`.  
+Finally, include the loss function in the `loss_select()`-function. Parameters can be passed through the dictionary-notation (see other examples) and if learnable parameters are added, include them in the `to_optim`-list.
+
+### [4.] Additional Notes:
 To finalize, several flags might be of interest when examining the respective runs:
 ```
 --dist_measure: If set, the ratio of mean intraclass-distances over mean interclass distances

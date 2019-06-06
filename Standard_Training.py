@@ -13,11 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 
+
+#################### LIBRARIES ########################
 import warnings
 warnings.filterwarnings("ignore")
 
 import os, sys, numpy as np, argparse, imp, datetime, time, pickle as pkl, random, json
-os.chdir('/media/karsten_dl/QS/Data/Dropbox/Projects/Confusezius_git/Deep_Metric_Learning_Baselines')
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -29,14 +32,12 @@ import torch, torch.nn as nn
 import auxiliaries as aux
 import datasets as data
 
-# sys.path.insert(0,os.getcwd()+'/models')
 import netlib as netlib
 import losses as losses
 import evaluate as eval
 
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
-
 
 
 
@@ -56,44 +57,42 @@ parser.add_argument('--seed',              default=1,        type=int,   help='R
 parser.add_argument('--scheduler',         default='step',   type=str,   help='Type of learning rate scheduling. Currently: step & exp.')
 parser.add_argument('--gamma',             default=0.3,      type=float, help='Learning rate reduction after tau epochs.')
 parser.add_argument('--decay',             default=0.0004,   type=float, help='Weight decay for optimizer.')
-parser.add_argument('--tau',               default=[30,55],nargs='+',type=int,help='Stepsize before reducing learning rate.')
+parser.add_argument('--tau',               default=[30,55],nargs='+',type=int,help='Stepsize(s) before reducing learning rate.')
 
 ##### Loss-specific Settings
-parser.add_argument('--loss',         default='marginloss', type=str,   help='Choose between TripletLoss, ProxyNCA, ...')
+parser.add_argument('--loss',         default='marginloss', type=str,   help='loss options: marginloss, triplet, npair, proxynca')
 parser.add_argument('--sampling',     default='distance',   type=str,   help='For triplet-based losses: Modes of Sampling: random, semihard, distance.')
 ### MarginLoss
-parser.add_argument('--margin',       default=0.2,          type=float, help='Margin for Triplet Loss')
-parser.add_argument('--beta_lr',      default=0.0005,       type=float, help='Learning Rate for class margin parameters in MarginLoss')
-parser.add_argument('--beta',         default=1.2,          type=float, help='Initial Class Margin Parameter in Margin Loss')
-parser.add_argument('--nu',           default=0,            type=float, help='Regularisation value on betas in Margin Loss.')
-parser.add_argument('--beta_constant',                       action='store_true')
+parser.add_argument('--margin',       default=0.2,          type=float, help='TRIPLET/MARGIN: Margin for Triplet-based Losses')
+parser.add_argument('--beta_lr',      default=0.0005,       type=float, help='MARGIN: Learning Rate for class margin parameters in MarginLoss')
+parser.add_argument('--beta',         default=1.2,          type=float, help='MARGIN: Initial Class Margin Parameter in Margin Loss')
+parser.add_argument('--nu',           default=0,            type=float, help='MARGIN: Regularisation value on betas in Margin Loss.')
+parser.add_argument('--beta_constant',                      action='store_true', help='MARGIN: Use constant, un-trained beta.')
 ### ProxyNCA
-parser.add_argument('--proxy_lr',     default=0.00001,     type=float, help='Learning Rate for Proxies in ProxyNCALoss.')
+parser.add_argument('--proxy_lr',     default=0.00001,     type=float, help='PROXYNCA: Learning Rate for Proxies in ProxyNCALoss.')
 ### NPair L2 Penalty
-parser.add_argument('--l2npair',      default=0.02,        type=float, help='Learning Rate for Proxies in ProxyNCALoss.')
+parser.add_argument('--l2npair',      default=0.02,        type=float, help='NPAIR: Penalty-value for non-normalized N-PAIR embeddings.')
 
 ##### Evaluation Settings
 parser.add_argument('--k_vals',       nargs='+', default=[1,2,4,8], type=int, help='Recall @ Values.')
 
 ##### Network parameters
-parser.add_argument('--embed_dim',    default=128,         type=int,   help='Embedding dimensionality of the network. Note: dim=128 or 64 is used in most papers.')
-parser.add_argument('--arch',         default='resnet50',  type=str,   help='Choice of loss function. Alternative Option: ProxyNCA')
-parser.add_argument('--not_pretrained',                    action='store_true')
-parser.add_argument('--grad_measure',                      action='store_true')
-parser.add_argument('--dist_measure',                      action='store_true')
+parser.add_argument('--embed_dim',    default=128,         type=int,   help='Embedding dimensionality of the network. Note: in literature, dim=128 is used for ResNet50 and dim=512 for GoogLeNet.')
+parser.add_argument('--arch',         default='resnet50',  type=str,   help='Network backend choice: resnet50, googlenet.')
+parser.add_argument('--not_pretrained',                    action='store_true', help='If added, the network will be trained WITHOUT ImageNet-pretrained weights.')
+parser.add_argument('--grad_measure',                      action='store_true', help='If added, gradients passed from embedding layer to the last conv-layer are stored in each iteration.')
+parser.add_argument('--dist_measure',                      action='store_true', help='If added, the ratio between intra- and interclass distances is stored after each epoch.')
 
 ##### Setup Parameters
-parser.add_argument('--gpu',          default=0,           type=int,   help='Random seed for reproducibility.')
-parser.add_argument('--no_weights',                        action='store_true')
-parser.add_argument('--savename',     default='',          type=str,   help='Appendix to save folder name if any special information is to be included.')
+parser.add_argument('--gpu',          default=0,           type=int,   help='GPU-id for GPU to use.')
+parser.add_argument('--savename',     default='',          type=str,   help='Save folder name if any special information is to be included.')
 
 ### Paths to datasets and storage folder
-parser.add_argument('--source_path',  default=os.getcwd()+'/../../Datasets',   type=str, help='Path to training data.')
+parser.add_argument('--source_path',  default=os.getcwd()+'/Datasets',         type=str, help='Path to training data.')
 parser.add_argument('--save_path',    default=os.getcwd()+'/Training_Results', type=str, help='Where to save everything.')
 
 ##### Read in parameters
-opt = parser.parse_args(['--gpu','0','--savename','resnet_cub_margin_dist','--dataset','vehicle_id','--n_epochs','50','--tau','30','--loss','marginloss','--sampling','distance'])
-
+opt = parser.parse_args()
 
 
 """============================================================================"""
@@ -130,7 +129,6 @@ np.random.seed(opt.seed); random.seed(opt.seed)
 torch.manual_seed(opt.seed); torch.cuda.manual_seed(opt.seed); torch.cuda.manual_seed_all(opt.seed)
 
 
-
 """============================================================================"""
 ##################### NETWORK SETUP ##################
 opt.device = torch.device('cuda')
@@ -139,11 +137,10 @@ model      = netlib.networkselect(opt)
 
 print('{} Setup for {} with {} sampling on {} complete with #weights: {}'.format(opt.loss.upper(), opt.arch.upper(), opt.sampling.upper(), opt.dataset.upper(), aux.gimme_params(model)))
 
-#Push to Device (CPU, GPU)
+#Push to Device
 _          = model.to(opt.device)
 #Place trainable parameter in list of parameters to train
 to_optim   = [{'params':model.parameters(),'lr':opt.lr,'weight_decay':opt.decay}]
-
 
 
 """============================================================================"""
@@ -172,7 +169,6 @@ metrics_to_log = aux.metrics_to_examine(opt.dataset, opt.k_vals)
 #Using the provided metrics of interest, we generate a LOGGER instance.
 #Note that 'start_new' denotes that a new folder should be made in which everything will be stored.
 #This includes network weights as well.
-imp.reload(aux)
 LOG = aux.LOGGER(opt, metrics_to_log, name='Base', start_new=True)
 #If graphviz is installed on the system, a computational graph of the underlying
 #network will be made as well.
@@ -187,10 +183,13 @@ except:
 ##################### OPTIONAL EVALUATIONS #####################
 #Store the averaged gradients returned from the embedding to the last conv. layer.
 if opt.grad_measure:
-    grad_measure = eval.GradientMeasure(opt, name='baseline', modes=[])
+    grad_measure = eval.GradientMeasure(opt, name='baseline')
 #Store the relative distances between average intra- and inter-class distance.
 if opt.dist_measure:
-    distance_measure = eval.DistanceMeasure(opt, name='baseline', modes=[])
+    #Add a distance measure for training distance ratios
+    distance_measure = eval.DistanceMeasure(dataloaders['evaluation'], opt, name='Train', update_epochs=1)
+    # #If uncommented: Do the same for the test set
+    # distance_measure_test = eval.DistanceMeasure(dataloaders['testing'], opt, name='Train', update_epochs=1)
 
 
 """============================================================================"""
@@ -224,12 +223,12 @@ def train_one_epoch(train_dataloader, model, optimizer, criterion, opt, epoch):
     (randomized) iteration of the dataset.
 
     Args:
-        :param train_dataloader: torch.utils.data.DataLoader, returns (augmented) training data.
-        :param model:            Network to train.
-        :param optimizer:        Optimizer to use for training.
-        :param criterion:        criterion to use during training.
-        :param opt:              argparse.Namespace, Contains all relevant parameters.
-        :param epoch:            int, Current epoch.
+        train_dataloader: torch.utils.data.DataLoader, returns (augmented) training data.
+        model:            Network to train.
+        optimizer:        Optimizer to use for training.
+        criterion:        criterion to use during training.
+        opt:              argparse.Namespace, Contains all relevant parameters.
+        epoch:            int, Current epoch.
 
     Returns:
         Nothing!
@@ -240,23 +239,32 @@ def train_one_epoch(train_dataloader, model, optimizer, criterion, opt, epoch):
 
     data_iterator = tqdm(train_dataloader, desc='Epoch {} Training...'.format(epoch))
     for i,(class_labels, input) in enumerate(data_iterator):
+        #Compute embeddings for input batch.
         features  = model(input.to(opt.device))
+        #Compute loss.
         loss      = criterion(features, class_labels)
 
+        #Ensure gradients are set to zero at beginning
         optimizer.zero_grad()
+        #Compute gradients.
         loss.backward()
 
         if opt.grad_measure:
+            #If desired, save computed gradients.
             grad_measure.include(model.model.last_linear)
 
+        #Update weights using comp. gradients.
         optimizer.step()
 
+        #Store loss per iteration.
         loss_collect.append(loss.item())
         if i==len(train_dataloader)-1: data_iterator.set_description('Epoch (Train) {0}: Mean Loss [{1:.4f}]'.format(epoch, np.mean(loss_collect)))
 
+    #Save metrics
     LOG.log('train', LOG.metrics_to_log['train'], [epoch, np.round(time.time()-start,4), np.mean(loss_collect)])
 
     if opt.grad_measure:
+        #Dump stored gradients to Pickle-File.
         grad_measure.dump(epoch)
 
 
@@ -273,8 +281,7 @@ for epoch in range(opt.n_epochs):
 
     ### Train one epoch
     _ = model.train()
-    # train_one_epoch(dataloaders['training'], model, optimizer, criterion, opt, epoch)
-
+    train_one_epoch(dataloaders['training'], model, optimizer, criterion, opt, epoch)
 
     ### Evaluate
     _ = model.eval()
@@ -286,17 +293,16 @@ for epoch in range(opt.n_epochs):
     elif opt.dataset=='vehicle_id':
         eval_params = {'dataloaders':[dataloaders['testing_set1'], dataloaders['testing_set2'], dataloaders['testing_set3']], 'model':model, 'opt':opt, 'epoch':epoch}
 
-    # from IPython import embed
-    # embed()
-
-    LOG.progress_saver = {'train': {'Epochs': [0],'Time': [748.1935],'Train Loss': [0.24577868185024487]},
-                          'val': {'Epochs': [],'Time': [],'Set 0 NMI': [],'Set 0 F1': [],'Set 0 Recall @ 1': [],'Set 0 Recall @ 5': [],'Set 1 NMI': [],'Set 1 F1': [],'Set 1 Recall @ 1': [],'Set 1 Recall @ 5': [],'Set 2 NMI': [],'Set 2 F1': [],'Set 2 Recall @ 1': [],'Set 2 Recall @ 5': []}}
-
     #Compute Evaluation metrics, print them and store in LOG.
     eval.evaluate(opt.dataset, LOG, save=True, **eval_params)
 
     #Update the Metric Plot and save it.
     LOG.update_info_plot()
+
+    #(optional) compute ratio of intra- to interdistances.
+    if opt.dist_measure:
+        distance_measure.measure(model, epoch)
+        # distance_measure_test.measure(model, epoch)
 
     ### Learning Rate Scheduling Step
     if opt.scheduler != 'none':
