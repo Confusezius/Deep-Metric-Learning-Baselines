@@ -263,8 +263,8 @@ GoogLeNet    |               |        |      |
 
 
 ## ToDO:
-- [ ] Fix Version in `requirements.txt`  
+- [x] Fix Version in `requirements.txt`  
 - [ ] Add Results for Implementations
-- [ ] Finalize Comments  
+- [x] Finalize Comments  
 - [ ] Add Inception-BN  
 - [ ] Add Lifted Structure Loss
