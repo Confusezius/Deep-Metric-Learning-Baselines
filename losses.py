@@ -495,7 +495,7 @@ class ProxyNCALoss(torch.nn.Module):
         PROXIES     = 3*torch.nn.functional.normalize(self.PROXIES, dim=1)
         #Group required proxies
         pos_proxies = torch.stack([PROXIES[pos_label:pos_label+1,:] for pos_label in labels])
-        neg_proxies = torch.stack([torch.cat([self.all_labels[:class_label],self.all_labels[class_label+1:]]) for class_label in labels])
+        neg_proxies = torch.stack([torch.cat([self.all_classes[:class_label],self.all_classes[class_label+1:]]) for class_label in labels])
         neg_proxies = torch.stack([PROXIES[neg_labels,:] for neg_labels in neg_proxies])
         #Compute Proxy-distances
         dist_to_neg_proxies = torch.sum((batch[:,None,:]-neg_proxies).pow(2),dim=-1)
