@@ -516,7 +516,7 @@ class InfoPlotter():
 
         #Visualize Training Loss
         for i in range(len(t_metrics)):
-            axes[0].plot(t_epochs, t_loss[i], '-{}'.format(self.t_colors[i]), linewidth=1, label=t_labels[i])
+            axes[0].plot(t_epochs, t_metrics[i], '-{}'.format(self.t_colors[i]), linewidth=1, label=t_labels[i])
         axes[0].set_title('Training Performance', fontsize=19)
 
         axes[0].legend(fontsize=16)
