@@ -2,7 +2,7 @@
 ### ___Authors___: Karsten Roth (karsten.rh1@gmail.com), Biagio Brattoli (biagio.brattoli@gmail.com)
 
 ---
-### FOR USAGE, GO TO SECTION 3
+### FOR USAGE, GO TO SECTION 3 - FOR RESULTS TO SECTION 4
 
 ## 1. Overview
 This repository contains a full, easily extendable pipeline to test and implement current and new deep metric learning methods. For referencing and testing, this repo contains implementations/dataloaders for:
