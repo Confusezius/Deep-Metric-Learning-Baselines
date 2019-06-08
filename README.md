@@ -221,6 +221,10 @@ For more details, refer to the respective classes in `auxiliaries.py`.
 ---
 
 ## 4. Results
+__NOTE:__ _This section is currently under construction._
+
+These results are supposed to be performance estimates achieved by running the respective commands in `sample_training_runs.sh`. Note that the learning rate scheduling might not be fully optimised, so these values should serve as reference/expectation, not what can be ultimately achieved with heavy tweaking.
+
 
 __CUB200__
 
