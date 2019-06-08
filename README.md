@@ -276,6 +276,7 @@ GoogLeNet    |  NPair/None         | __87.3__   | __25.3__ | 75.7, __92.6, 95.1,
 
 
 
+__NOTE:__ Regarding __Vehicle-ID__: Due to the number of test sets, size of the training set and little public accessibility, results are not included for the time being.
 
 ---
 
