@@ -224,17 +224,33 @@ For more details, refer to the respective classes in `auxiliaries.py`.
 
 __CUB200__
 
-Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,2,4,8
--------------|---------------|--------|------|-----------------
-ResNet50     |               |        |      |     
-GoogLeNet    |               |        |      |      
+Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1,2,4,8
+-------------|---------------      |--------|------|-----------------
+ResNet50     |  Margin/Distance    | __68.2__   | __38.7__ | 63.4, 74.9, __86.0__, 90.4    
+ResNet50     |  Triplet/Semihard   | 66.4   | 35.3 | 61.4, 73.3, 82.7, 89.6    
+ResNet50     |  NPair/None         | 65.4   | 33.8 | 59.0, 71.3, 81.1, 88.8    
+ResNet50     |  ProxyNCA/None      | 68.1   | 38.1 | __64.0__, __75.4__, 84.2, __90.5__    
+ -           |         -           |    -   |   -  |  -   
+GoogLeNet    |  Margin/Distance    | __62.5__   | __31.9__ | __57.9, 69.7, 79.9, 87.7__    
+GoogLeNet    |  Triplet/Semihard   | 61.6   | 29.7 | 56.8, 68.9, 78.7, 86.7    
+GoogLeNet    |  NPair/None         | 59.2   | 26.2 | 50.6, 63.3, 74.5, 83.7    
+GoogLeNet    |  ProxyNCA/None      | 61.2   | 29.0 | 55.4, 67.3, 77.8, 85.1    
+
 
 __Cars196__
 
-Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,2,4,8
--------------|---------------|--------|------|-----------------
-ResNet50     |               |        |      |     
-GoogLeNet    |               |        |      |      
+Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1,2,4,8
+-------------|---------------      |--------|------|-----------------
+ResNet50     |  Margin/Distance    | __67.2__   | __37.6__ | 79.3, 87.1, __92.1, 95.4__    
+ResNet50     |  Triplet/Semihard   | 64.2   | 32.7 | 75.2, 84.1, 90.0, 94.0
+ResNet50     |  NPair/None         | 62.3   | 30.1 | 69.5, 80.2, 87.3, 92.1
+ResNet50     |  ProxyNCA/None      | 66.3   | 35.8 | __80.0, 87.2__, 91.8, 95.1
+ -           |         -           |    -   |   -  |  -   
+GoogLeNet    |  Margin/Distance    
+GoogLeNet    |  Triplet/Semihard   
+GoogLeNet    |  NPair/None         
+GoogLeNet    |  ProxyNCA/None      
+
 
 __Online Products__
 
@@ -243,20 +259,21 @@ Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,10,100,1000
 ResNet50     |               |        |      |     
 GoogLeNet    |               |        |      |      
 
+
+
 __In-Shop Clothes__
 
-Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,10,20,30,50
--------------|---------------|--------|------|-----------------
-ResNet50     |               |        |      |     
-GoogLeNet    |               |        |      |      
+Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1,10,20,30,50
+-------------|---------------      |--------|------|-----------------
+ResNet50     |  Margin/Distance    | 88.2   | 27.7 | __84.5__, 96.1, 97.4, 97.9, 98.5
+ResNet50     |  Triplet/Semihard   | __89.0__   | __30.8__ | 83.8, __96.4, 97.6, 98.2, 98.7__
+ResNet50     |  NPair/None         | 88.0   | 27.6 | 80.9, 95.0, 96.6, 97.5, 98.2
+ -           |         -           |    -   |   -  |  -   
+GoogLeNet    |  Margin/Distance    | 86.9   | 23.0 | __78.9__, 91.8, 94.2, 95.3, 96.5
+GoogLeNet    |  Triplet/Semihard   | 86.2   | 22.3 | 71.5, 90.2, 93.2, 94.5, 95.9
+GoogLeNet    |  NPair/None         | __87.3__   | __25.3__ | 75.7, __92.6, 95.1, 96.2, 97.2__
 
 
-__Vehicle ID__ *(medium test set)*
-
-Architecture | Loss/Sampling |   NMI  |  F1  | Recall @ 1,5
--------------|---------------|--------|------|-----------------
-ResNet50     |               |        |      |     
-GoogLeNet    |               |        |      |      
 
 
 ---
