@@ -310,7 +310,7 @@ __NOTE:__ Regarding __Vehicle-ID__: Due to the number of test sets, size of the 
 
 ## ToDO:
 - [x] Fix Version in `requirements.txt`  
-- [ ] Add Results for Implementations
+- [x] Add Results for Implementations
 - [x] Finalize Comments  
 - [ ] Add Inception-BN  
 - [ ] Add Lifted Structure Loss
