@@ -227,7 +227,7 @@ Name_of_Training_Run
 ![Sample Recoveries](/Images/sample_recoveries.png)
 __Note:__ _Red denotes query images, while green show the resp. nearest neighbours._
 
-![Sample Recoveries](/Images/InfoPlot_Base.svg)
+![Sample Recoveries](/Images/InfoPlot_Base.png)
 __Note:__ _The header in the summary plot shows the best testing metrics over the whole run._
 
 ### [5.] Additional Notes:
