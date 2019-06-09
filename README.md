@@ -303,10 +303,11 @@ GoogLeNet    |  NPair/None         | __87.3__   | __25.3__ | 75.7 -- __92.6 -- 9
 
 
 
-__NOTE:__ Regarding __Vehicle-ID__: Due to the number of test sets, size of the training set and little public accessibility, results are not included for the time being.
+__NOTE:__
+ 1. Regarding __Vehicle-ID__: Due to the number of test sets, size of the training set and little public accessibility, results are not included for the time being.
+ 2. Regarding ProxyNCA for __Online Products__ and __In-Shop Clothes__: Due to the high number of classes, the number of proxies required is too high for useful training (>10000 proxies). 
 
 ---
-
 
 ## ToDO:
 - [x] Fix Version in `requirements.txt`  
