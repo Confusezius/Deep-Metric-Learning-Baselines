@@ -1,7 +1,8 @@
 Pillow==5.2.0
 tqdm==4.26.0
-pytorch==1.0.1 -c pytorch
+pytorch==1.0.1 cudatoolkit=9.0 -c pytorch
 torchvision -c pytorch
+faiss-gpu cudatoolkit=9.0 -c pytorch
 matplotlib==2.2.2
 pandas==0.23.4
 scipy==1.2.1
