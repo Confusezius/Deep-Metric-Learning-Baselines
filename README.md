@@ -45,7 +45,7 @@ Repository
 │   installer.sh
 |
 |   ### Main Scripts
-|   main.py     (main training script)
+|   Standard_Training.py     (main training script)
 |   losses.py   (collection of loss and sampling impl.)
 │   datasets.py (dataloaders for all datasets)
 │   
@@ -161,10 +161,10 @@ Note that for kMeans- and Nearest Neighbour Computation, the library `faiss` is 
 
 
 ### [2.] Exemplary Runs
-The main script is `main.py`. If running without input arguments, training of ResNet50 on CUB200-2011 with Marginloss and Distance-sampling is performed.  
+The main script is `Standard_Training.py`. If running without input arguments, training of ResNet50 on CUB200-2011 with Marginloss and Distance-sampling is performed.  
 Otherwise, the following flags suffice to train with different losses, sampling methods, architectures and datasets:
 ```
-python main.py --dataset <dataset> --loss <loss> --sampling <sampling> --arch <arch> --k_vals <k_vals> --embed_dim <embed_dim>
+python Standard_Training.py --dataset <dataset> --loss <loss> --sampling <sampling> --arch <arch> --k_vals <k_vals> --embed_dim <embed_dim>
 ```
 The following flags are available:
 * `<dataset> <- cub200, cars196, online_products, in-shop, vehicle_id`
@@ -174,11 +174,11 @@ The following flags are available:
 * `<k_vals> <- List of Recall @ k values to evaluate on, e.g. 1 2 4 8`
 * `<embed_dim> <- Network embedding dimension. Default: 128 for ResNet50, 512 for GoogLeNet.`
 
-For all other training-specific arguments (e.g. batch-size, num. training epochs., ...), simply refer to the input arguments in `main.py`.
+For all other training-specific arguments (e.g. batch-size, num. training epochs., ...), simply refer to the input arguments in `Standard_Training.py`.
 
 Finally, to decide the GPU to use and the name of the training folder in which network weights, sample recoveries and metrics are stored, set:
 ```
-python main.py --gpu <gpu_id> --savename <name_of_training_run>
+python Standard_Training.py --gpu <gpu_id> --savename <name_of_training_run>
 ```
 If `--savename` is not set, a default name based on the starting date will be chosen.
 
