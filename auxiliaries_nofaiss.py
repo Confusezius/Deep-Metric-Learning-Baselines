@@ -29,9 +29,10 @@ from tqdm import tqdm
 import pickle as pkl
 
 from sklearn import metrics
-from sklearn import cluster
+from sklearn.cluster import KMeans
+from scipy.spatial.distance import squareform, pdist, cdist
 
-import faiss
+# import faiss
 
 import losses as losses
 
@@ -207,30 +208,36 @@ def eval_metrics_one_dataset(model, test_dataloader, device, k_vals, opt):
         torch.cuda.empty_cache()
 
         ### Set Faiss CPU Cluster index
-        cpu_cluster_index = faiss.IndexFlatL2(feature_coll.shape[-1])
-        kmeans            = faiss.Clustering(feature_coll.shape[-1], n_classes)
-        kmeans.niter = 20
-        kmeans.min_points_per_centroid = 1
-        kmeans.max_points_per_centroid = 1000000000
+        # cpu_cluster_index = faiss.IndexFlatL2(feature_coll.shape[-1])
+        # kmeans            = faiss.Clustering(feature_coll.shape[-1], n_classes)
+        # kmeans.niter = 20
+        # kmeans.min_points_per_centroid = 1
+        # kmeans.max_points_per_centroid = 1000000000
 
         ### Train Kmeans
-        kmeans.train(feature_coll, cpu_cluster_index)
-        computed_centroids = faiss.vector_float_to_array(kmeans.centroids).reshape(n_classes, feature_coll.shape[-1])
+        # kmeans.train(feature_coll, cpu_cluster_index)
+        # computed_centroids = faiss.vector_float_to_array(kmeans.centroids).reshape(n_classes, feature_coll.shape[-1])
 
         ### Assign feature points to clusters
-        faiss_search_index = faiss.IndexFlatL2(computed_centroids.shape[-1])
-        faiss_search_index.add(computed_centroids)
-        _, model_generated_cluster_labels = faiss_search_index.search(feature_coll, 1)
+        # faiss_search_index = faiss.IndexFlatL2(computed_centroids.shape[-1])
+        # faiss_search_index.add(computed_centroids)
+        # _, model_generated_cluster_labels = faiss_search_index.search(feature_coll, 1)
+
+        kmeans = KMeans(n_clusters=n_classes, random_state=0).fit(feature_coll)
+        model_generated_cluster_labels = kmeans.labels_
+        computed_centroids = kmeans.cluster_centers_
 
         ### Compute NMI
         NMI = metrics.cluster.normalized_mutual_info_score(model_generated_cluster_labels.reshape(-1), target_labels.reshape(-1))
 
 
         ### Recover max(k_vals) nearest neighbours to use for recall computation
-        faiss_search_index  = faiss.IndexFlatL2(feature_coll.shape[-1])
-        faiss_search_index.add(feature_coll)
-        _, k_closest_points = faiss_search_index.search(feature_coll, int(np.max(k_vals)+1))
-        k_closest_classes   = target_labels.reshape(-1)[k_closest_points[:,1:]]
+        # faiss_search_index  = faiss.IndexFlatL2(feature_coll.shape[-1])
+        # faiss_search_index.add(feature_coll)
+        # _, k_closest_points = faiss_search_index.search(feature_coll, int(np.max(k_vals)+1))
+
+        k_closest_points  = squareform(pdist(feature_coll)).argsort(1)[:, :int(np.max(k_vals)+1)]
+        k_closest_classes = target_labels.reshape(-1)[k_closest_points[:, 1:]]
 
         ### Compute Recall
         recall_all_k = []
@@ -350,9 +357,11 @@ def recover_closest_one_dataset(feature_matrix_all, image_paths, save_path, n_im
     image_paths = np.array([x[0] for x in image_paths])
     sample_idxs = np.random.choice(np.arange(len(feature_matrix_all)), n_image_samples)
 
-    faiss_search_index = faiss.IndexFlatL2(feature_matrix_all.shape[-1])
-    faiss_search_index.add(feature_matrix_all)
-    _, closest_feature_idxs = faiss_search_index.search(feature_matrix_all, n_closest+1)
+    # faiss_search_index = faiss.IndexFlatL2(feature_matrix_all.shape[-1])
+    # faiss_search_index.add(feature_matrix_all)
+    # _, closest_feature_idxs = faiss_search_index.search(feature_matrix_all, n_closest+1)
+
+    closest_feature_idxs  = squareform(pdist(feature_matrix_all)).argsort(1)[:,:n_closest+1]
 
     sample_paths = image_paths[closest_feature_idxs][sample_idxs]
 
