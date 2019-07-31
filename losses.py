@@ -231,7 +231,7 @@ class Sampler():
 
     def pdist(self, A, eps = 1e-4):
         """
-        Efficient function to compute the distance matrix for a matric A.
+        Efficient function to compute the distance matrix for a matrix A.
 
         Args:
             A:   Matrix/Tensor for which the distance matrix is to be computed.

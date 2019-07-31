@@ -156,7 +156,8 @@ and run
 bash installer.sh
 ```
 
-Note that for kMeans- and Nearest Neighbour Computation, the library `faiss` is used, which can allow to move these computations to GPU if speed is desired. However, in most cases, `faiss` is fast enough s.t. the computation of evaluation metrics is no bottleneck.
+Note that for kMeans- and Nearest Neighbour Computation, the library `faiss` is used, which can allow to move these computations to GPU if speed is desired. However, in most cases, `faiss` is fast enough s.t. the computation of evaluation metrics is no bottleneck.  
+**NOTE:** If one wishes not to use `faiss` but standard `sklearn`, simply use `auxiliaries_nofaiss.py` to replace `auxiliaries.py` when importing the libraries.
 
 
 
@@ -305,7 +306,7 @@ GoogLeNet    |  NPair/None         | __87.3__   | __25.3__ | 75.7 -- __92.6 -- 9
 
 __NOTE:__
  1. Regarding __Vehicle-ID__: Due to the number of test sets, size of the training set and little public accessibility, results are not included for the time being.
- 2. Regarding ProxyNCA for __Online Products__ and __In-Shop Clothes__: Due to the high number of classes, the number of proxies required is too high for useful training (>10000 proxies). 
+ 2. Regarding ProxyNCA for __Online Products__ and __In-Shop Clothes__: Due to the high number of classes, the number of proxies required is too high for useful training (>10000 proxies).
 
 ---
 

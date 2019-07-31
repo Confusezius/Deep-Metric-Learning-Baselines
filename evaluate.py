@@ -242,7 +242,7 @@ class GradientMeasure():
     def dump(self, epoch):
         """
         Append all gradients to a pickle file.
-        
+
         Args:
             epoch: Current epoch
         Returns:
@@ -388,3 +388,9 @@ def evaluate_multiple_datasets(LOG, dataloaders, model, opt, save=True, give_ret
     csv_data.insert(0, np.round(time.time()-start))
     #Update logs.
     LOG.log('val', LOG.metrics_to_log['val'], csv_data)
+
+
+    if give_return:
+        return csv_data[2:]
+    else:
+        None

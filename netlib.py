@@ -173,7 +173,7 @@ class ResNet50(nn.Module):
 
         for layerblock in self.layer_blocks:
             x = layerblock(x)
-            
+
         x = self.model.avgpool(x)
         x = x.view(x.size(0),-1)
 
