@@ -30,7 +30,7 @@ __Architectures__
 * GoogLeNet (https://arxiv.org/abs/1409.4842)
 * ResNet50 (https://arxiv.org/pdf/1512.03385.pdf)
 
-__NOTE__: In-Shop Clothes and PKU Vehicle-ID are _(optional)_ because there is no direct way to download the dataset. The former webpage has a broken download link, and the latter requires special licensing. However, if these datasets are available (in the structure shown in part 2.2), they can be used directly.
+__NOTE__: In-Shop Clothes and PKU Vehicle-ID are _(optional)_ because there is no direct way to download the dataset (__INFO__: In-Shop Clothes can be downloaded at https://drive.google.com/drive/folders/0B7EVK8r0v71pVDZFQXRsMDZCX1E. In-Shop Clothes Result will be included at a later time). The former webpage has a broken download link, and the latter requires special licensing. However, if these datasets are available (in the structure shown in part 2.2), they can be used directly.
 
 
 ---
