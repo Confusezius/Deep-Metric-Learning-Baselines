@@ -70,7 +70,7 @@ def loss_select(loss, opt, to_optim):
 
 """================================================================================================="""
 ######### MAIN SAMPLER CLASS #################################
-class Sampler():
+class TupleSampler():
     """
     Container for all sampling methods that can be used in conjunction with the respective loss functions.
     Based on batch-wise sampling, i.e. given a batch of training data, sample useful data tuples that are
@@ -288,11 +288,11 @@ class TripletLoss(torch.nn.Module):
         Args:
             margin:             float, Triplet Margin - Ensures that positives aren't placed arbitrarily close to the anchor.
                                 Similarl, negatives should not be placed arbitrarily far away.
-            sampling_method:    Method to use for sampling training triplets. Used for the Sampler-class.
+            sampling_method:    Method to use for sampling training triplets. Used for the TupleSampler-class.
         """
         super(TripletLoss, self).__init__()
         self.margin             = margin
-        self.sampler            = Sampler(method=sampling_method)
+        self.sampler            = TupleSampler(method=sampling_method)
 
     def triplet_distance(self, anchor, positive, negative):
         """
@@ -335,7 +335,7 @@ class NPairLoss(torch.nn.Module):
             Nothing!
         """
         super(NPairLoss, self).__init__()
-        self.sampler = Sampler(method='npair')
+        self.sampler = TupleSampler(method='npair')
         self.l2      = l2
 
     def npair_distance(self, anchor, positive, negatives):
@@ -409,7 +409,7 @@ class MarginLoss(torch.nn.Module):
         self.nu                 = nu
 
         self.sampling_method    = sampling_method
-        self.sampler            = Sampler(method=sampling_method)
+        self.sampler            = TupleSampler(method=sampling_method)
 
 
     def forward(self, batch, labels):
