@@ -135,7 +135,8 @@ def give_CARS196_datasets(opt):
     #Image-dict of shape {class_idx:[list of paths to images belong to this class] ...}
     image_dict    = {}
     for key, img_path in image_list:
-        key = key-1
+        key = key
+        # key = key-1
         if not key in image_dict.keys():
             image_dict[key] = []
         image_dict[key].append(img_path)

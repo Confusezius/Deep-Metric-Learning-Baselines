@@ -177,6 +177,8 @@ The following flags are available:
 
 For all other training-specific arguments (e.g. batch-size, num. training epochs., ...), simply refer to the input arguments in `Standard_Training.py`.
 
+__NOTE__: If one wishes to use a different learning rate for the final linear embedding layer, the flag `--fc_lr_mul` needs to be set to a value other than zero (i.e. `10` as is done in various implementations).
+
 Finally, to decide the GPU to use and the name of the training folder in which network weights, sample recoveries and metrics are stored, set:
 ```
 python Standard_Training.py --gpu <gpu_id> --savename <name_of_training_run>

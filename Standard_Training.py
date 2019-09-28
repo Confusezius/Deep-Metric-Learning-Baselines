@@ -49,6 +49,7 @@ parser.add_argument('--dataset',      default='cub200',   type=str, help='Datase
 
 ### General Training Parameters
 parser.add_argument('--lr',                default=0.00001,  type=float, help='Learning Rate for network parameters.')
+parser.add_argument('--fc_lr_mul',         default=0,        type=float, help='OPTIONAL: Multiply the embedding layer learning rate by this value. If set to 0, the embedding layer shares the same learning rate.')
 parser.add_argument('--n_epochs',          default=70,       type=int,   help='Number of training epochs.')
 parser.add_argument('--kernels',           default=8,        type=int,   help='Number of workers for pytorch dataloader.')
 parser.add_argument('--bs',                default=112 ,     type=int,   help='Mini-Batchsize to use.')
@@ -139,8 +140,16 @@ print('{} Setup for {} with {} sampling on {} complete with #weights: {}'.format
 
 #Push to Device
 _          = model.to(opt.device)
-#Place trainable parameter in list of parameters to train
-to_optim   = [{'params':model.parameters(),'lr':opt.lr,'weight_decay':opt.decay}]
+#Place trainable parameter in list of parameters to train:
+if 'fc_lr_mul' in vars(opt).keys() and opt.fc_lr_mul!=0:
+    all_but_fc_params = list(filter(lambda x: 'last_linear' not in x[0],model.named_parameters()))
+    fc_params         = model.model.last_linear.parameters()
+    to_optim          = [{'params':all_but_fc_params,'lr':opt.lr,'weight_decay':opt.decay},
+                         {'params':fc_params,'lr':opt.lr*opt.fc_lr_mul,'weight_decay':opt.decay}]
+else:
+    to_optim   = [{'params':model.parameters(),'lr':opt.lr,'weight_decay':opt.decay}]
+
+
 
 
 """============================================================================"""
