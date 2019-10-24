@@ -34,7 +34,7 @@ __Architectures__
 
 __NOTE__: PKU Vehicle-ID is _(optional)_ because there is no direct way to download the dataset, as it requires special licensing. However, if this dataset becomes available (in the structure shown in part 2.2), it can be used directly.
 
-
+---
 ### 1.1 Related Repos:
 * [Metric Learning with Mined Interclass Characteristics](https://github.com/Confusezius/metric-learning-mining-interclass-characteristics)
 * [Metric Learning by dividing the embedding space](https://github.com/CompVis/metric-learning-divide-and-conquer)
