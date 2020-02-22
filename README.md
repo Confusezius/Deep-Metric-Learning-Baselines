@@ -7,6 +7,7 @@
 
 Based on an extendend version of this repo, we have created a thorough comparison and evaluation of Deep Metric Learning: 
 https://arxiv.org/abs/2002.08473
+
 The used code will be uploaded soon :).
 
 ---
