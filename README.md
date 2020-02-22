@@ -1,11 +1,11 @@
 # Easily Extendable Basic Deep Metric Learning Pipeline
-### ___Authors___: Karsten Roth (karsten.rh1@gmail.com), Biagio Brattoli (biagio.brattoli@gmail.com)
+#### Karsten Roth (karsten.rh1@gmail.com), Biagio Brattoli (biagio.brattoli@gmail.com)
 
 *When using this repo in any academic work, please provide a reference to this repo, that would be greatly appreciated :).*
 
 ---
 
-Based on an extendend version of this repo, we have created a thorough comparison and evaluation of Deep Metric Learning: 
+#### Based on an extendend version of this repo, we have created a thorough comparison and evaluation of Deep Metric Learning: 
 https://arxiv.org/abs/2002.08473
 
 The used code will be uploaded soon :).
