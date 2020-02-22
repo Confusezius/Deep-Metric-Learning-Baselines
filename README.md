@@ -11,7 +11,7 @@ https://arxiv.org/abs/2002.08473
 The used code will be uploaded soon :).
 
 ---
-### FOR USAGE, GO TO SECTION 3 - FOR RESULTS TO SECTION 4
+#### For usage, go to section 3 - for results to section 4
 
 ## 1. Overview
 This repository contains a full, easily extendable pipeline to test and implement current and new deep metric learning methods. For referencing and testing, this repo contains implementations/dataloaders for:
