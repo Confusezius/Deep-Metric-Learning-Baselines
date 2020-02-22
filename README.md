@@ -4,6 +4,12 @@
 *When using this repo in any academic work, please provide a reference to this repo, that would be greatly appreciated :).*
 
 ---
+
+Based on an extendend version of this repo, we have created a thorough comparison and evaluation of Deep Metric Learning: 
+https://arxiv.org/abs/2002.08473
+The used code will be uploaded soon :).
+
+---
 ### FOR USAGE, GO TO SECTION 3 - FOR RESULTS TO SECTION 4
 
 ## 1. Overview
