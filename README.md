@@ -15,7 +15,8 @@ __Loss Functions__
 
 __Sampling Methods__
 * Random Sampling
-* Semihard Sampling (https://arxiv.org/abs/1511.06452)
+* Softhard Sampling (Soft Version of hard tuple sampling)
+* Semihard Sampling (https://arxiv.org/abs/1503.03832)
 * Distance Sampling (https://arxiv.org/abs/1706.07567)
 * N-Pair Sampling (https://papers.nips.cc/paper/6200-improved-deep-metric-learning-with-multi-class-n-pair-loss-objective.pdf)
 
@@ -27,8 +28,10 @@ __Datasets__
 * (optional) PKU Vehicle-ID (https://www.pkuml.org/resources/pku-vds.html)
 
 __Architectures__
-* GoogLeNet (https://arxiv.org/abs/1409.4842)
-* ResNet50 (https://arxiv.org/pdf/1512.03385.pdf)
+* ResNet50 (https://arxiv.org/abs/1512.03385)
+* GoogLeNet (https://arxiv.org/abs/1409.4842)    
+  [Note: This version follows the official torchvision implementation, which differs from the original variant.]
+
 
 __NOTE__: In-Shop Clothes and PKU Vehicle-ID are _(optional)_ because there is no direct way to download the dataset (__INFO__: In-Shop Clothes can be downloaded at https://drive.google.com/drive/folders/0B7EVK8r0v71pVDZFQXRsMDZCX1E. In-Shop Clothes Result will be included at a later time). The former webpage has a broken download link, and the latter requires special licensing. However, if these datasets are available (in the structure shown in part 2.2), they can be used directly.
 
@@ -72,22 +75,12 @@ Repository
 ```
 
 ### 2.2 Dataset Structures
-__CUB200-2011__
+__CUB200-2011/CARS196__
 ```
-cub200
+cub200/cars196
 └───images
 |    └───001.Black_footed_Albatross
 |           │   Black_Footed_Albatross_0001_796111
-|           │   ...
-|    ...
-```
-
-__CARS196__
-```
-cars196
-└───images
-|    └───Acura Integra Type R 2001
-|           │   00128.jpg
 |           │   ...
 |    ...
 ```
@@ -108,18 +101,18 @@ online_products
 __In-Shop Clothes__
 ```
 in-shop
-└───img
-|    └───MEN
-|         └───Denim
-|               └───id_00000080
-|                       │   01_1_front.jpg
-|                       │   ...
+└─img
+|    └─MEN
+|         └─Denim
+|               └─id_00000080
+|                  │   01_1_front.jpg
+|                  │   ...
 |               ...
 |         ...
 |    ...
 |
-└───Eval
-|    │   list_eval_partition.txt
+└─Eval
+|  │   list_eval_partition.txt
 ```
 
 
@@ -257,13 +250,9 @@ __CUB200__
 Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1 -- 2 -- 4 -- 8
 -------------|---------------      |--------|------|-----------------
 ResNet50     |  Margin/Distance    | __68.2__   | __38.7__ | 63.4 -- 74.9 --  __86.0__ --  90.4    
-ResNet50     |  Triplet/Semihard   | 66.4   | 35.3 | 61.4 --  73.3 --  82.7 --  89.6    
+ResNet50     |  Triplet/Semihard   | 66.2   | 35.5 | 61.2 --  73.2 --  82.4 --  89.5    
 ResNet50     |  NPair/None         | 65.4   | 33.8 | 59.0 --  71.3 --  81.1 --  88.8    
 ResNet50     |  ProxyNCA/None      | 68.1   | 38.1 | __64.0__ --  __75.4__ --  84.2 --  __90.5__    
-GoogLeNet    |  Margin/Distance    | __62.5__   | __31.9__ | __57.9 --  69.7 --  79.9 --  87.7__    
-GoogLeNet    |  Triplet/Semihard   | 61.6   | 29.7 | 56.8 --  68.9 --  78.7 --  86.7    
-GoogLeNet    |  NPair/None         | 59.2   | 26.2 | 50.6 --  63.3 --  74.5 --  83.7    
-GoogLeNet    |  ProxyNCA/None      | 61.2   | 29.0 | 55.4 --  67.3 --  77.8 --  85.1    
 
 
 __Cars196__
@@ -271,26 +260,17 @@ __Cars196__
 Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1 -- 2 -- 4 -- 8
 -------------|---------------      |--------|------|-----------------
 ResNet50     |  Margin/Distance    | __67.2__   | __37.6__ | 79.3 -- 87.1 -- __92.1 -- 95.4__    
-ResNet50     |  Triplet/Semihard   | 64.2   | 32.7 | 75.2 -- 84.1 -- 90.0 -- 94.0
+ResNet50     |  Triplet/Semihard   | 64.4   | 32.4 | 75.4 -- 84.2 -- 90.1 -- 94.1
 ResNet50     |  NPair/None         | 62.3   | 30.1 | 69.5 -- 80.2 -- 87.3 -- 92.1
 ResNet50     |  ProxyNCA/None      | 66.3   | 35.8 | __80.0 -- 87.2__ -- 91.8 -- 95.1
-GoogLeNet    |  Margin/Distance    | 59.3   | __27.0__ | __73.7 -- 82.7 -- 89.3 -- 93.9__
-GoogLeNet    |  Triplet/Semihard   | 59.2   | __27.0__ | 68.4 -- 78.3 -- 85.7 -- 90.8
-GoogLeNet    |  NPair/None         | __59.7__   | 26.8 | 65.9 -- 76.7 -- 84.5 -- 90.3
-GoogLeNet    |  ProxyNCA/None      | 59.2   | 26.8 | 70.3 -- 80.1 -- 86.7 -- 91.6
-
 
 __Online Products__
 
 Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1 -- 10 -- 100 -- 1000
 -------------|---------------      |--------|------|-----------------
 ResNet50     |  Margin/Distance    | __89.6__   | __34.9__ | __76.1 -- 88.7 -- 95.1__ -- 98.3
-ResNet50     |  Triplet/Semihard   | 89.3   | 33.5 | 74.0 -- 87.4 -- 94.8 -- __98.4__
+ResNet50     |  Triplet/Semihard   | 89.1   | 33.7 | 74.3 -- 87.6 -- 94.9 -- __98.5__
 ResNet50     |  NPair/None         | 88.8   | 31.1 | 70.9 -- 85.2 -- 93.8 -- 98.2
-GoogLeNet    |  Margin/Distance    | __87.9__   | __27.1__ | __68.2 -- 82.4__ -- 91.6 -- 97.1
-GoogLeNet    |  Triplet/Semihard   | __87.9__   | 26.9 | 66.1 -- 81.8 -- __91.7 -- 97.5__
-GoogLeNet    |  NPair/None         | 87.6   | 25.9 | 63.4 -- 80.1 -- 91.3 -- 97.4
-
 
 
 __In-Shop Clothes__
@@ -298,12 +278,8 @@ __In-Shop Clothes__
 Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1 -- 10 -- 20 -- 30 -- 50
 -------------|---------------      |--------|------|-----------------
 ResNet50     |  Margin/Distance    | 88.2   | 27.7 | __84.5__ -- 96.1 -- 97.4 -- 97.9 -- 98.5
-ResNet50     |  Triplet/Semihard   | __89.0__   | __30.8__ | 83.8 -- __96.4 -- 97.6 -- 98.2 -- 98.7__
+ResNet50     |  Triplet/Semihard   | __89.0__   | __30.8__ | 83.9 -- __96.3 -- 97.6 -- 98.4 -- 98.8__
 ResNet50     |  NPair/None         | 88.0   | 27.6 | 80.9 -- 95.0 -- 96.6 -- 97.5 -- 98.2
-GoogLeNet    |  Margin/Distance    | 86.9   | 23.0 | __78.9__ -- 91.8 -- 94.2 -- 95.3 -- 96.5
-GoogLeNet    |  Triplet/Semihard   | 86.2   | 22.3 | 71.5 -- 90.2 -- 93.2 -- 94.5 -- 95.9
-GoogLeNet    |  NPair/None         | __87.3__   | __25.3__ | 75.7 -- __92.6 -- 95.1 -- 96.2 -- 97.2__
-
 
 
 __NOTE:__
