@@ -1,8 +1,17 @@
 # Easily Extendable Basic Deep Metric Learning Pipeline
-### ___Authors___: Karsten Roth (karsten.rh1@gmail.com), Biagio Brattoli (biagio.brattoli@gmail.com)
+#### Karsten Roth (karsten.rh1@gmail.com), Biagio Brattoli (biagio.brattoli@gmail.com)
+
+*When using this repo in any academic work, please provide a reference to this repo, that would be greatly appreciated :).*
 
 ---
-### FOR USAGE, GO TO SECTION 3 - FOR RESULTS TO SECTION 4
+
+#### Based on an extendend version of this repo, we have created a thorough comparison and evaluation of Deep Metric Learning: 
+https://arxiv.org/abs/2002.08473
+
+The used code will be uploaded soon :).
+
+---
+#### For usage, go to section 3 - for results to section 4
 
 ## 1. Overview
 This repository contains a full, easily extendable pipeline to test and implement current and new deep metric learning methods. For referencing and testing, this repo contains implementations/dataloaders for:
@@ -24,7 +33,7 @@ __Datasets__
 * CUB200-2011 (http://www.vision.caltech.edu/visipedia/CUB-200.html)
 * CARS196 (https://ai.stanford.edu/~jkrause/cars/car_dataset.html)
 * Stanford Online Products (http://cvgl.stanford.edu/projects/lifted_struct/)
-* (Optional) In-Shop Clothes (http://mmlab.ie.cuhk.edu.hk/projects/DeepFashion/InShopRetrieval.html)
+* In-Shop Clothes (http://mmlab.ie.cuhk.edu.hk/projects/DeepFashion/InShopRetrieval.html, download from https://drive.google.com/drive/folders/0B7EVK8r0v71pVDZFQXRsMDZCX1E. Thanks to KunHe for providing the link!)
 * (optional) PKU Vehicle-ID (https://www.pkuml.org/resources/pku-vds.html)
 
 __Architectures__
@@ -33,9 +42,13 @@ __Architectures__
   [Note: This version follows the official torchvision implementation, which differs from the original variant.]
 
 
-__NOTE__: In-Shop Clothes and PKU Vehicle-ID are _(optional)_ because there is no direct way to download the dataset (__INFO__: In-Shop Clothes can be downloaded at https://drive.google.com/drive/folders/0B7EVK8r0v71pVDZFQXRsMDZCX1E. In-Shop Clothes Result will be included at a later time). The former webpage has a broken download link, and the latter requires special licensing. However, if these datasets are available (in the structure shown in part 2.2), they can be used directly.
+__NOTE__: PKU Vehicle-ID is _(optional)_ because there is no direct way to download the dataset, as it requires special licensing. However, if this dataset becomes available (in the structure shown in part 2.2), it can be used directly.
 
-
+---
+### 1.1 Related Repos:
+* [Metric Learning with Mined Interclass Characteristics](https://github.com/Confusezius/metric-learning-mining-interclass-characteristics)
+* [Metric Learning by dividing the embedding space](https://github.com/CompVis/metric-learning-divide-and-conquer)
+* [Deep Metric Learning to Rank](https://github.com/kunhe/FastAP-metric-learning)
 ---
 
 ## 2. Repo & Dataset Structure
