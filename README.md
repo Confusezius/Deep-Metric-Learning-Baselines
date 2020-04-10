@@ -263,7 +263,7 @@ __CUB200__
 Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1 -- 2 -- 4 -- 8
 -------------|---------------      |--------|------|-----------------
 ResNet50     |  Margin/Distance    | __68.2__   | __38.7__ | 63.4 -- 74.9 --  __86.0__ --  90.4    
-ResNet50     |  Triplet/Semihard   | 66.2   | 35.5 | 61.2 --  73.2 --  82.4 --  89.5    
+ResNet50     |  Triplet/Softhard   | 66.2   | 35.5 | 61.2 --  73.2 --  82.4 --  89.5    
 ResNet50     |  NPair/None         | 65.4   | 33.8 | 59.0 --  71.3 --  81.1 --  88.8    
 ResNet50     |  ProxyNCA/None      | 68.1   | 38.1 | __64.0__ --  __75.4__ --  84.2 --  __90.5__    
 
@@ -273,7 +273,7 @@ __Cars196__
 Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1 -- 2 -- 4 -- 8
 -------------|---------------      |--------|------|-----------------
 ResNet50     |  Margin/Distance    | __67.2__   | __37.6__ | 79.3 -- 87.1 -- __92.1 -- 95.4__    
-ResNet50     |  Triplet/Semihard   | 64.4   | 32.4 | 75.4 -- 84.2 -- 90.1 -- 94.1
+ResNet50     |  Triplet/Softhard   | 64.4   | 32.4 | 75.4 -- 84.2 -- 90.1 -- 94.1
 ResNet50     |  NPair/None         | 62.3   | 30.1 | 69.5 -- 80.2 -- 87.3 -- 92.1
 ResNet50     |  ProxyNCA/None      | 66.3   | 35.8 | __80.0 -- 87.2__ -- 91.8 -- 95.1
 
@@ -282,7 +282,7 @@ __Online Products__
 Architecture | Loss/Sampling       |   NMI  |  F1  | Recall @ 1 -- 10 -- 100 -- 1000
 -------------|---------------      |--------|------|-----------------
 ResNet50     |  Margin/Distance    | __89.6__   | __34.9__ | __76.1 -- 88.7 -- 95.1__ -- 98.3
-ResNet50     |  Triplet/Semihard   | 89.1   | 33.7 | 74.3 -- 87.6 -- 94.9 -- __98.5__
+ResNet50     |  Triplet/Softhard   | 89.1   | 33.7 | 74.3 -- 87.6 -- 94.9 -- __98.5__
 ResNet50     |  NPair/None         | 88.8   | 31.1 | 70.9 -- 85.2 -- 93.8 -- 98.2
 
 
