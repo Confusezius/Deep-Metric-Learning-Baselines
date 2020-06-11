@@ -1,7 +1,18 @@
 # Easily Extendable Basic Deep Metric Learning Pipeline
 #### Karsten Roth (karsten.rh1@gmail.com), Biagio Brattoli (biagio.brattoli@gmail.com)
 
-*When using this repo in any academic work, please provide a reference to this repo, that would be greatly appreciated :).*
+*When using this repo in any academic work, please provide a reference to*
+
+```
+@misc{roth2020revisiting,
+    title={Revisiting Training Strategies and Generalization Performance in Deep Metric Learning},
+    author={Karsten Roth and Timo Milbich and Samarth Sinha and Prateek Gupta and Björn Ommer and Joseph Paul Cohen},
+    year={2020},
+    eprint={2002.08473},
+    archivePrefix={arXiv},
+    primaryClass={cs.CV}
+}
+```
 
 ---
 
