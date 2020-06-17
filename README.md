@@ -19,7 +19,7 @@
 #### Based on an extendend version of this repo, we have created a thorough comparison and evaluation of Deep Metric Learning: 
 https://arxiv.org/abs/2002.08473
 
-The newly released code can be found here: https://github.com/Confusezius/Deep-Metric-Learning-Baselines
+The newly released code can be found here: https://github.com/Confusezius/Revisiting_Deep_Metric_Learning_PyTorch
 
 It contains more criteria, miner, metrics and logging options!
 
